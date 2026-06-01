@@ -1,38 +1,28 @@
-from visaflow.schemas import ExtractionResult, Plan
+from visaflow.schemas import Plan
 
 
+def render_result(source_text: str, extracted: dict, plan: Plan, response: str) -> str:
+    lines = []
 
-def render_extraction(extraction: ExtractionResult) -> str:
-    lines = ["EXTRACTION RESULTS"]
+    lines.append("=== Source ===")
+    lines.append(source_text)
+    lines.append("")
 
-    lines.append("\nDeadlines:")
-    if extraction.deadlines:
-        for deadline in extraction.deadlines:
-            lines.append(f"- {deadline.text} (normalized: {deadline.normalized})")
+    lines.append("=== Extracted Information ===")
+    lines.append(f"Deadlines: {extracted.get('deadlines', [])}")
+    lines.append(f"Requested documents: {extracted.get('requested_documents', [])}")
+    lines.append(f"Action items: {extracted.get('action_items', [])}")
+    lines.append("")
+
+    lines.append("=== Plan ===")
+    if plan.tasks:
+        for task in plan.tasks:
+            lines.append(f"- {task.task} [{task.priority}]")
     else:
-        lines.append("- None found")
+        lines.append("No tasks generated.")
+    lines.append("")
 
-    lines.append("\nRequested documents:")
-    if extraction.documents:
-        for document in extraction.documents:
-            lines.append(f"- {document.name}")
-    else:
-        lines.append("- None found")
+    lines.append("=== Draft Response ===")
+    lines.append(response)
 
-    lines.append("\nAction items:")
-    if extraction.action_items:
-        for item in extraction.action_items:
-            lines.append(f"- [{item.priority}] {item.description}")
-    else:
-        lines.append("- None found")
-
-    return "\n".join(lines)
-
-
-
-def render_plan(plan: Plan) -> str:
-    lines = ["\nPLANNED TASKS"]
-    for task in plan.tasks:
-        lines.append(f"- [{task.priority}] {task.title}")
-        lines.append(f"  reason: {task.rationale}")
     return "\n".join(lines)
