@@ -50,8 +50,21 @@ def sort_tasks(tasks):
     )
 
 
+def infer_dependencies(action_text: str, document_tasks):
+    lowered = action_text.lower()
+
+    if any(word in lowered for word in ["confirm", "reply", "respond"]):
+        return [task.task for task in document_tasks]
+
+    if "upload" in lowered:
+        return [task.task for task in document_tasks]
+
+    return []
+
+
 def build_task_plan(extracted: dict) -> Plan:
     tasks = []
+    document_tasks = []
 
     for deadline in extracted.get("deadlines", []):
         task_text = f"Track deadline: {deadline}"
@@ -65,13 +78,13 @@ def build_task_plan(extracted: dict) -> Plan:
 
     for document in extracted.get("requested_documents", []):
         task_text = f"Prepare document: {document}"
-        tasks.append(
-            PlannedTask(
-                task=task_text,
-                priority=infer_priority(task_text, "requested_document"),
-                source="requested_document",
-            )
+        planned = PlannedTask(
+            task=task_text,
+            priority=infer_priority(task_text, "requested_document"),
+            source="requested_document",
         )
+        tasks.append(planned)
+        document_tasks.append(planned)
 
     for action in extracted.get("action_items", []):
         task_text = f"Complete action: {action}"
@@ -80,6 +93,7 @@ def build_task_plan(extracted: dict) -> Plan:
                 task=task_text,
                 priority=infer_priority(action, "action_item"),
                 source="action_item",
+                depends_on=infer_dependencies(action, document_tasks),
             )
         )
 

@@ -17,7 +17,10 @@ def render_result(source_text: str, extracted: dict, plan: Plan, response: str) 
     lines.append("=== Plan ===")
     if plan.tasks:
         for task in plan.tasks:
-            lines.append(f"- {task.task} [{task.priority}]")
+            suffix = ""
+            if task.depends_on:
+                suffix = f" -> depends on: {task.depends_on}"
+            lines.append(f"- {task.task} [{task.priority}]{suffix}")
     else:
         lines.append("No tasks generated.")
     lines.append("")
