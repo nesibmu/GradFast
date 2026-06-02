@@ -264,7 +264,7 @@ def render_comparison_summary(left_name: str, left_result: dict, right_name: str
     left_workflows = set(task.workflow_type for task in left_plan.tasks)
     right_workflows = set(task.workflow_type for task in right_plan.tasks)
 
-    st.markdown("### Comparison Summary")
+    st.markdown("### Comparison Highlights")
 
     def compare_line(label, left_val, right_val):
         if left_val > right_val:
@@ -418,7 +418,7 @@ with hero_right:
     st.markdown(
         f"""
 <div style="border:1px solid #e5e7eb;border-radius:16px;padding:16px;background:#ffffff;">
-  <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Current demo state</div>
+  <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Current state</div>
   <div style="font-size:18px;font-weight:700;margin-bottom:8px;">{current_case_label}</div>
   <div style="font-size:13px;color:#4b5563;">Mode: {current_mode_label}</div>
   <div style="font-size:13px;color:#4b5563;">Presenter mode: {"on" if presenter_mode else "off"}</div>
@@ -433,27 +433,27 @@ st.divider()
 
 control_left, control_mid, control_right = st.columns([1.2, 1.2, 0.8])
 with control_left:
-    st.markdown("### Demo Control Bar")
-    st.caption("Use quick launches or the sidebar to move through the demo.")
+    st.markdown("### Demo controls")
+    st.caption("Use quick launch buttons or the sidebar controls during the demo.")
 with control_mid:
     if st.session_state.results is None:
-        st.info("No active result loaded.")
+        st.info("No results loaded yet.")
     else:
-        st.success("Results are currently loaded and persistent.")
+        st.success("Current results are loaded.")
 with control_right:
     if st.button("Reset demo state", use_container_width=True):
         st.session_state.results = None
 
 if show_demo_script and not minimal_view:
-    with st.expander("Guided Demo Script", expanded=False):
-        st.markdown("### Suggested presentation flow")
+    with st.expander("Demo guide", expanded=False):
+        st.markdown("### Suggested flow")
         for i, step in enumerate(DEMO_SCRIPT, start=1):
             st.write(f"{i}. {step}")
         st.markdown("### Preset explanations")
         for name, preset in DEMO_PRESETS.items():
             st.write(f"- **{name}**: {preset['description']}")
 
-st.subheader("Quick Demo Launch")
+st.subheader("Quick Launch")
 q1, q2, q3, q4, q5, q6 = st.columns(6)
 preset_names = list(DEMO_PRESETS.keys())
 quick_clicked = None
@@ -508,7 +508,7 @@ if run_pipeline:
 results = st.session_state.results
 
 if results is not None and isinstance(results, dict) and results.get("comparison"):
-    st.subheader("Preset Comparison")
+    st.subheader("Case Comparison")
     render_comparison_summary(results["left_name"], results["left"], results["right_name"], results["right"])
     left_col, right_col = st.columns(2)
     with left_col:
@@ -550,7 +550,7 @@ elif results is not None:
     st.markdown(
         f"""
 <div style="border:1px solid #dbeafe;border-radius:14px;padding:14px 16px;background:#eff6ff;margin-bottom:14px;">
-  <div style="font-size:12px;color:#1d4ed8;margin-bottom:6px;">Recommended next action</div>
+  <div style="font-size:12px;color:#1d4ed8;margin-bottom:6px;">Next best action</div>
   <div style="font-size:16px;font-weight:700;color:#1e3a8a;">{recommended_next_action}</div>
 </div>
 """,
@@ -569,7 +569,7 @@ elif results is not None:
     if minimal_view:
         left, right = st.columns([1.0, 1.0])
         with left:
-            st.subheader("Operational Summary")
+            st.subheader("Summary")
             st.text_area("Summary", summary, height=260)
         with right:
             st.subheader("Task Plan")
@@ -580,8 +580,8 @@ elif results is not None:
                     render_task_card(task)
 
         st.divider()
-        st.subheader("Response Workspace")
-        tab1, tab2, tab3 = st.tabs(["Enhanced Draft", "Checklist", "Ops Handoff"])
+        st.subheader("Outputs")
+        tab1, tab2, tab3 = st.tabs(["Enhanced Draft", "Checklist", "Operations Handoff"])
 
         with tab1:
             enhanced_editable = st.text_area("Enhanced Draft", enhanced_draft, height=320)
@@ -595,7 +595,7 @@ elif results is not None:
             )
 
         with tab2:
-            checklist_text = st.text_area("Action Checklist", checklist, height=320)
+            checklist_text = st.text_area("Checklist", checklist, height=320)
             st.download_button(
                 label="Download checklist",
                 data=checklist_text,
@@ -606,7 +606,7 @@ elif results is not None:
             )
 
         with tab3:
-            ops_text = st.text_area("Ops Handoff", ops_handoff, height=320)
+            ops_text = st.text_area("Operations Handoff", ops_handoff, height=320)
             st.download_button(
                 label="Download ops handoff",
                 data=ops_text,
@@ -619,15 +619,15 @@ elif results is not None:
     else:
         left, right = st.columns([1.15, 0.85])
         with left:
-            st.subheader("Source Text")
+            st.subheader("Source")
             st.text_area("Input", source_text, height=260)
         with right:
-            st.subheader("Operational Summary")
+            st.subheader("Summary")
             st.text_area("Summary", summary, height=260)
 
         st.divider()
 
-        st.subheader("Extraction Dashboard")
+        st.subheader("Extraction Overview")
 
         d1, d2, d3 = st.columns(3)
         with d1:
@@ -709,10 +709,10 @@ elif results is not None:
                             )
 
         st.divider()
-        st.subheader("Response Workspace")
+        st.subheader("Outputs")
 
         if presenter_mode:
-            tab1, tab2, tab3 = st.tabs(["Enhanced Draft", "Checklist", "Ops Handoff"])
+            tab1, tab2, tab3 = st.tabs(["Enhanced Draft", "Checklist", "Operations Handoff"])
             with tab1:
                 enhanced_editable = st.text_area("Enhanced Draft", enhanced_draft, height=320)
                 st.download_button(
@@ -724,7 +724,7 @@ elif results is not None:
                     key="download_enhanced_presenter",
                 )
             with tab2:
-                checklist_text = st.text_area("Action Checklist", checklist, height=320)
+                checklist_text = st.text_area("Checklist", checklist, height=320)
                 st.download_button(
                     label="Download checklist",
                     data=checklist_text,
@@ -734,7 +734,7 @@ elif results is not None:
                     key="download_checklist_presenter",
                 )
             with tab3:
-                ops_text = st.text_area("Ops Handoff", ops_handoff, height=320)
+                ops_text = st.text_area("Operations Handoff", ops_handoff, height=320)
                 st.download_button(
                     label="Download ops handoff",
                     data=ops_text,
@@ -744,7 +744,7 @@ elif results is not None:
                     key="download_ops_handoff_presenter",
                 )
         else:
-            tab1, tab2, tab3, tab4, tab5 = st.tabs(["Summary", "Baseline Draft", "Enhanced Draft", "Checklist", "Ops Handoff"])
+            tab1, tab2, tab3, tab4, tab5 = st.tabs(["Summary", "Baseline Draft", "Enhanced Draft", "Checklist", "Operations Handoff"])
 
             with tab1:
                 st.text_area("Summary view", summary, height=280)
@@ -780,7 +780,7 @@ elif results is not None:
                 )
 
             with tab4:
-                checklist_text = st.text_area("Action Checklist", checklist, height=320)
+                checklist_text = st.text_area("Checklist", checklist, height=320)
                 st.download_button(
                     label="Download checklist",
                     data=checklist_text,
@@ -791,7 +791,7 @@ elif results is not None:
                 )
 
             with tab5:
-                ops_text = st.text_area("Ops Handoff", ops_handoff, height=320)
+                ops_text = st.text_area("Operations Handoff", ops_handoff, height=320)
                 st.download_button(
                     label="Download ops handoff",
                     data=ops_text,
@@ -801,4 +801,4 @@ elif results is not None:
                     key="download_ops_handoff",
                 )
 else:
-    st.info("Choose a preset, sample file, pasted text, or uploaded file, then click Run pipeline, or use a Quick Demo Launch button.")
+    st.info("Choose a preset, sample file, pasted text, or uploaded file, then click Run pipeline, or use a Quick Launch button.")
