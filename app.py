@@ -321,6 +321,19 @@ with hero_right:
 
 st.divider()
 
+control_left, control_mid, control_right = st.columns([1.2, 1.2, 0.8])
+with control_left:
+    st.markdown("### Demo Control Bar")
+    st.caption("Use quick launches or the sidebar to move through the demo.")
+with control_mid:
+    if st.session_state.results is None:
+        st.info("No active result loaded.")
+    else:
+        st.success("Results are currently loaded and persistent.")
+with control_right:
+    if st.button("Reset demo state", use_container_width=True):
+        st.session_state.results = None
+
 if show_demo_script:
     with st.expander("Guided Demo Script", expanded=False):
         st.markdown("### Suggested presentation flow")
