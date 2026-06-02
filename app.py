@@ -499,7 +499,7 @@ if not comparison_mode and input_mode == "Demo preset" and selected_preset:
         unsafe_allow_html=True,
     )
 
-st.subheader("Quick Launch")
+st.subheader("Quick Launch Presets")
 q1, q2, q3, q4, q5, q6 = st.columns(6)
 preset_names = [
     "Mixed admin case",
