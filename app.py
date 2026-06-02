@@ -619,7 +619,7 @@ elif results is not None:
         st.info("A partial workflow was detected. This is usable, but likely not a complete administrative request.")
 
     if weak_case_label == "generic_follow_up":
-        st.info("This looks like a generic follow-up message rather than a detailed administrative request.")
+        st.info("This looks like a generic follow-up rather than a detailed administrative request.")
     elif weak_case_label == "soft_reminder":
         st.info("This looks like a soft reminder message with limited operational detail.")
     elif weak_case_label == "incomplete_request":
