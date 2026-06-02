@@ -5,6 +5,23 @@ def _top_tasks(tasks, limit=4):
     return [task.task for task in tasks[:limit]]
 
 
+def generate_recommended_next_action(plan: Plan) -> str:
+    if not plan.tasks:
+        return "No clear next action was identified."
+
+    urgent = [task for task in plan.tasks if task.status == "urgent"]
+    ready = [task for task in plan.tasks if task.status == "ready"]
+    blocked = [task for task in plan.tasks if task.status == "blocked"]
+
+    if urgent:
+        return f"Recommended next action: {urgent[0].task}"
+    if ready:
+        return f"Recommended next action: {ready[0].task}"
+    if blocked:
+        return f"Recommended next action: unblock {blocked[0].task}"
+    return "No clear next action was identified."
+
+
 def generate_next_step_summary(plan: Plan) -> str:
     if not plan.tasks:
         return "No immediate action items were identified."
@@ -14,6 +31,8 @@ def generate_next_step_summary(plan: Plan) -> str:
     blocked = [task for task in plan.tasks if task.status == "blocked"]
 
     lines = []
+    lines.append(generate_recommended_next_action(plan))
+    lines.append("")
     lines.append("Here is the current operational picture:")
     lines.append("")
 

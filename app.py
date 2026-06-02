@@ -8,6 +8,7 @@ from visaflow.drafting.drafter import (
     draft_response_with_mode,
     generate_next_step_summary,
     generate_action_checklist,
+    generate_recommended_next_action,
 )
 
 
@@ -81,6 +82,7 @@ def run_pipeline_from_text(text: str):
     extracted = extract_information(text)
     plan = build_task_plan(extracted)
     summary = generate_next_step_summary(plan)
+    recommended_next_action = generate_recommended_next_action(plan)
     checklist = generate_action_checklist(plan)
     baseline_draft = draft_response_with_mode(plan, enhanced=False)
     enhanced_draft = draft_response_with_mode(plan, enhanced=True)
@@ -89,6 +91,7 @@ def run_pipeline_from_text(text: str):
         "extracted": extracted,
         "plan": plan,
         "summary": summary,
+        "recommended_next_action": recommended_next_action,
         "checklist": checklist,
         "baseline_draft": baseline_draft,
         "enhanced_draft": enhanced_draft,
@@ -433,6 +436,7 @@ elif results is not None:
     extracted = results["extracted"]
     plan = results["plan"]
     summary = results["summary"]
+    recommended_next_action = results["recommended_next_action"]
     checklist = results["checklist"]
     baseline_draft = results["baseline_draft"]
     enhanced_draft = results["enhanced_draft"]
@@ -457,6 +461,15 @@ elif results is not None:
     workflow_count = len(set(task.workflow_type for task in plan.tasks))
 
     st.subheader("Overview")
+    st.markdown(
+        f"""
+<div style="border:1px solid #dbeafe;border-radius:14px;padding:14px 16px;background:#eff6ff;margin-bottom:14px;">
+  <div style="font-size:12px;color:#1d4ed8;margin-bottom:6px;">Recommended next action</div>
+  <div style="font-size:16px;font-weight:700;color:#1e3a8a;">{recommended_next_action}</div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
     m1, m2, m3, m4, m5 = st.columns(5)
     m1.metric("Deadlines", len(deadlines))
     m2.metric("Documents", len(documents))
