@@ -110,20 +110,27 @@ def extract_requested_documents(text: str) -> List[str]:
 
 def extract_action_items(text: str) -> List[str]:
     actions = []
-    sentence_patterns = [
+    action_patterns = [
         r"(please submit .+?)(?:\.|\n)",
         r"(please upload .+?)(?:\.|\n)",
         r"(please confirm .+?)(?:\.|\n)",
+        r"(please reply .+?)(?:\.|\n)",
         r"(reply to this email.+?)(?:\.|\n)",
+        r"(reply to this message.+?)(?:\.|\n)",
         r"(respond to this message.+?)(?:\.|\n)",
         r"(respond to any follow-up requests.+?)(?:\.|\n)",
+        r"(let us know .+?)(?:\.|\n)",
+        r"(follow up .+?)(?:\.|\n)",
         r"(check the .+? portal.+?)(?:\.|\n)",
         r"(upload .+? through the .+? portal.+?)(?:\.|\n)",
+        r"(confirm once .+?)(?:\.|\n)",
+        r"(if you need an extension, respond .+?)(?:\.|\n)",
+        r"(if you expect any delay, reply .+?)(?:\.|\n)",
     ]
 
-    for pattern in sentence_patterns:
+    for pattern in action_patterns:
         for match in re.findall(pattern, text, flags=re.IGNORECASE):
-            cleaned = match.strip(" .")
+            cleaned = re.sub(r"\s+", " ", match).strip(" .")
             if cleaned:
                 actions.append(cleaned)
 
