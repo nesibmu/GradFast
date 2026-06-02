@@ -8,7 +8,8 @@ from visaflow.drafting.drafter import draft_response_with_mode, generate_next_st
 
 
 DEMO_PRESETS = {
-    "Housing follow-up": """Subject: Additional documents needed for spring housing approval
+    "Housing follow-up": {
+        "text": """Subject: Additional documents needed for spring housing approval
 
 Hello Nesib,
 
@@ -18,7 +19,10 @@ Please confirm once the materials have been uploaded. If you need an extension, 
 
 Best,
 Housing Assignments""",
-    "Financial aid review": """Subject: Missing documents for financial aid review
+        "description": "Shows deadline extraction, document requests, portal upload actions, and follow-up handling.",
+    },
+    "Financial aid review": {
+        "text": """Subject: Missing documents for financial aid review
 
 Hello Nesib,
 
@@ -28,7 +32,10 @@ Please upload both documents by June 3, 2026. If you are unable to meet this dea
 
 Best,
 Financial Aid Office""",
-    "Immigration update": """Subject: Missing immigration documents
+        "description": "Shows document extraction from sentence-style requests and deadline-driven prioritization.",
+    },
+    "Immigration update": {
+        "text": """Subject: Missing immigration documents
 
 Hello,
 
@@ -38,6 +45,8 @@ Please confirm once the materials have been uploaded.
 
 Best,
 International Student Office""",
+        "description": "Shows immigration-related document handling and action-item extraction.",
+    },
 }
 
 
@@ -69,14 +78,21 @@ VisaFlow helps turn messy administrative emails and document requests into:
 1. structured extracted information,
 2. a prioritized task plan,
 3. a ready-to-edit draft response.
-
-For the demo, the fastest options are:
-- a built-in demo preset,
-- a sample file,
-- pasted text,
-- or an uploaded `.txt` file.
 """
 )
+
+with st.expander("Demo guide", expanded=True):
+    st.write("Recommended flow for the demo:")
+    st.write("1. Start with a preset to show a fast end-to-end example.")
+    st.write("2. Show extracted deadlines, documents, and action items.")
+    st.write("3. Show the task plan, filtering, and evidence.")
+    st.write("4. Compare baseline vs enhanced draft output.")
+    st.write("5. End with pasted text or uploaded file input.")
+
+    st.write("")
+    st.write("Preset guide:")
+    for name, preset in DEMO_PRESETS.items():
+        st.write(f"- **{name}**: {preset['description']}")
 
 sample_files = sorted([p.name for p in SAMPLES_DIR.glob("*.txt")])
 
@@ -95,6 +111,7 @@ with st.sidebar:
 
     if input_mode == "Demo preset":
         selected_preset = st.selectbox("Choose a demo preset", list(DEMO_PRESETS.keys()))
+        st.caption(DEMO_PRESETS[selected_preset]["description"])
     elif input_mode == "Sample file":
         selected_file = st.selectbox("Choose a sample file", sample_files)
     elif input_mode == "Paste text":
@@ -112,7 +129,7 @@ if run_pipeline:
     source_text = ""
 
     if input_mode == "Demo preset":
-        source_text = DEMO_PRESETS[selected_preset]
+        source_text = DEMO_PRESETS[selected_preset]["text"]
     elif input_mode == "Sample file":
         document = load_document(SAMPLES_DIR / selected_file)
         source_text = document.text
