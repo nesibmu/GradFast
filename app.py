@@ -80,6 +80,16 @@ def priority_color(priority: str) -> str:
     return "#9ca3af"
 
 
+def status_badge(status: str) -> str:
+    colors = {
+        "urgent": ("#fee2e2", "#991b1b"),
+        "ready": ("#dcfce7", "#166534"),
+        "blocked": ("#e5e7eb", "#374151"),
+    }
+    bg, fg = colors.get(status, ("#f3f4f6", "#111827"))
+    return f"<span style='background:{bg};color:{fg};padding:4px 8px;border-radius:999px;font-size:12px;font-weight:600;'>{status}</span>"
+
+
 def confidence_label(score: float) -> str:
     if score >= 0.9:
         return "high"
@@ -128,12 +138,10 @@ def render_task_card(task):
 <div style="border-left:6px solid {color};border-radius:12px;padding:14px 16px;margin-bottom:12px;background:#ffffff;border:1px solid #e5e7eb;">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
     <div style="font-weight:600;font-size:15px;">{task.task}</div>
-    <div style="font-size:12px;padding:4px 8px;border-radius:999px;background:#f9fafb;border:1px solid #e5e7eb;">
-      {task.priority}
-    </div>
+    <div>{status_badge(task.status)}</div>
   </div>
-  <div style="margin-top:6px;font-size:12px;color:#6b7280;">
-    workflow: {task.workflow_type} • source: {task.source}
+  <div style="margin-top:8px;font-size:12px;color:#6b7280;">
+    workflow: {task.workflow_type} • source: {task.source} • priority: {task.priority}
   </div>
   {depends}
 </div>
@@ -168,7 +176,7 @@ st.caption("AI operations agent for international-student bureaucracy")
 
 st.markdown(
     """
-VisaFlow turns messy administrative communication into a clearer workflow:
+VisaFlow turns administrative communication into a clearer workflow:
 - extract deadlines, requested documents, and action items
 - show supporting evidence
 - build a prioritized task plan
@@ -233,7 +241,9 @@ if run_pipeline:
         evidence = extracted.get("evidence", {})
         confidence = extracted.get("confidence", {})
 
-        urgent_count = len([task for task in plan.tasks if task.priority == "high"])
+        urgent_count = len([task for task in plan.tasks if task.status == "urgent"])
+        ready_count = len([task for task in plan.tasks if task.status == "ready"])
+        blocked_count = len([task for task in plan.tasks if task.status == "blocked"])
         workflow_count = len(set(task.workflow_type for task in plan.tasks))
 
         st.subheader("Overview")
@@ -241,7 +251,7 @@ if run_pipeline:
         m1.metric("Deadlines", len(deadlines))
         m2.metric("Documents", len(documents))
         m3.metric("Actions", len(actions))
-        m4.metric("Urgent tasks", urgent_count)
+        m4.metric("Urgent / Ready / Blocked", f"{urgent_count} / {ready_count} / {blocked_count}")
         m5.metric("Workflows", workflow_count)
 
         st.divider()
@@ -285,18 +295,22 @@ if run_pipeline:
 
         workflow_options = ["all"] + sorted({task.workflow_type for task in plan.tasks})
         priority_options = ["all", "high", "medium", "low"]
+        status_options = ["all", "urgent", "ready", "blocked"]
 
-        f1, f2 = st.columns(2)
+        f1, f2, f3 = st.columns(3)
         with f1:
             selected_workflow = st.selectbox("Filter by workflow", workflow_options)
         with f2:
             selected_priority = st.selectbox("Filter by priority", priority_options)
+        with f3:
+            selected_status = st.selectbox("Filter by status", status_options)
 
         filtered_tasks = []
         for task in plan.tasks:
             workflow_ok = selected_workflow == "all" or task.workflow_type == selected_workflow
             priority_ok = selected_priority == "all" or task.priority == selected_priority
-            if workflow_ok and priority_ok:
+            status_ok = selected_status == "all" or task.status == selected_status
+            if workflow_ok and priority_ok and status_ok:
                 filtered_tasks.append(task)
 
         if filtered_tasks:

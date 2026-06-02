@@ -16,6 +16,7 @@ class PlannedTask:
     priority: str = "medium"
     source: str = ""
     workflow_type: str = "general"
+    status: str = "ready"
     depends_on: List[str] = field(default_factory=list)
 
 
