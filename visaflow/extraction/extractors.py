@@ -41,6 +41,7 @@ def clean_document_phrase(text: str) -> str:
     text = re.sub(r"^(a|an|the|your|their)\s+", "", text, flags=re.IGNORECASE)
     text = re.sub(r"\bthrough the student portal\b", "", text, flags=re.IGNORECASE)
     text = re.sub(r"\bthrough the portal\b", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bvia the student portal\b", "", text, flags=re.IGNORECASE)
     text = re.sub(r"\bupload\b", "", text, flags=re.IGNORECASE)
     text = re.sub(r"\bsubmit\b", "", text, flags=re.IGNORECASE)
     text = re.sub(r"\s+", " ", text).strip(" .,:;")
@@ -80,6 +81,17 @@ def score_action_confidence(item: str) -> float:
     return 0.70
 
 
+def dedupe_ordered(items: List[str]) -> List[str]:
+    seen = set()
+    ordered = []
+    for item in items:
+        key = normalize_for_matching(item)
+        if key not in seen:
+            seen.add(key)
+            ordered.append(item)
+    return ordered
+
+
 def extract_deadlines(text: str) -> List[str]:
     deadlines = []
 
@@ -93,15 +105,7 @@ def extract_deadlines(text: str) -> List[str]:
         for match in re.findall(pattern, text, flags=re.IGNORECASE):
             deadlines.append(match.strip())
 
-    seen = set()
-    ordered = []
-    for item in deadlines:
-        key = normalize_for_matching(item)
-        if key not in seen:
-            seen.add(key)
-            ordered.append(item)
-
-    return ordered
+    return dedupe_ordered(deadlines)
 
 
 def extract_requested_documents(text: str) -> List[str]:
@@ -130,15 +134,18 @@ def extract_requested_documents(text: str) -> List[str]:
                 if cleaned and len(cleaned) > 2:
                     documents.append(cleaned)
 
-    seen = set()
-    ordered = []
-    for item in documents:
-        key = normalize_for_matching(item)
-        if key not in seen:
-            seen.add(key)
-            ordered.append(item)
+    documents = dedupe_ordered(documents)
 
-    return ordered
+    filtered = []
+    for doc in documents:
+        lowered = doc.lower()
+        if lowered in {"documents", "materials", "items", "file", "record"}:
+            continue
+        if lowered.startswith("please "):
+            continue
+        filtered.append(doc)
+
+    return filtered
 
 
 def extract_action_items(text: str) -> List[str]:
@@ -167,15 +174,33 @@ def extract_action_items(text: str) -> List[str]:
             if cleaned:
                 actions.append(cleaned)
 
-    seen = set()
-    ordered = []
-    for item in actions:
-        key = normalize_for_matching(item)
-        if key not in seen:
-            seen.add(key)
-            ordered.append(item)
+    actions = dedupe_ordered(actions)
 
-    return ordered
+    filtered = []
+    for action in actions:
+        lowered = action.lower()
+        if lowered in {"please upload", "please submit", "please confirm"}:
+            continue
+        filtered.append(action)
+
+    return filtered
+
+
+def remove_document_action_overlap(documents: List[str], actions: List[str]) -> List[str]:
+    filtered_docs = []
+    normalized_actions = [normalize_for_matching(a) for a in actions]
+
+    for doc in documents:
+        doc_norm = normalize_for_matching(doc)
+        overlap = False
+        for action_norm in normalized_actions:
+            if doc_norm and doc_norm in action_norm and len(doc_norm.split()) >= 3:
+                overlap = True
+                break
+        if not overlap:
+            filtered_docs.append(doc)
+
+    return filtered_docs
 
 
 def build_evidence_map(text: str, extracted: Dict[str, List[str]]) -> Dict[str, Dict[str, str]]:
@@ -223,10 +248,15 @@ def build_confidence_map(extracted: Dict[str, List[str]]) -> Dict[str, Dict[str,
 
 
 def extract_information(text: str) -> Dict[str, object]:
+    deadlines = extract_deadlines(text)
+    documents = extract_requested_documents(text)
+    actions = extract_action_items(text)
+    documents = remove_document_action_overlap(documents, actions)
+
     extracted = {
-        "deadlines": extract_deadlines(text),
-        "requested_documents": extract_requested_documents(text),
-        "action_items": extract_action_items(text),
+        "deadlines": deadlines,
+        "requested_documents": documents,
+        "action_items": actions,
     }
     extracted["evidence"] = build_evidence_map(text, extracted)
     extracted["confidence"] = build_confidence_map(extracted)
