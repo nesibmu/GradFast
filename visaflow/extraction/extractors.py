@@ -17,9 +17,24 @@ RELATIVE_DEADLINE_PATTERNS = [
 ]
 
 
+def normalize_for_matching(text: str) -> str:
+    text = text.lower().strip()
+    text = re.sub(r"\s+", " ", text)
+    return text
+
+
 def split_sentences(text: str) -> List[str]:
-    parts = re.split(r"(?<=[\.\?\!])\s+|\n+", text)
-    return [part.strip() for part in parts if part.strip()]
+    text = text.replace("\r\n", "\n").replace("\r", "\n").strip()
+
+    raw_chunks = re.split(r"\n\s*\n|(?<=[.!?])\s+(?=[A-Z])", text)
+    cleaned = []
+
+    for chunk in raw_chunks:
+        chunk = re.sub(r"\s+", " ", chunk).strip()
+        if chunk:
+            cleaned.append(chunk)
+
+    return cleaned
 
 
 def extract_deadlines(text: str) -> List[str]:
@@ -38,7 +53,7 @@ def extract_deadlines(text: str) -> List[str]:
     seen = set()
     ordered = []
     for item in deadlines:
-        key = item.lower()
+        key = normalize_for_matching(item)
         if key not in seen:
             seen.add(key)
             ordered.append(item)
@@ -74,7 +89,7 @@ def extract_requested_documents(text: str) -> List[str]:
     seen = set()
     ordered = []
     for item in documents:
-        key = item.lower()
+        key = normalize_for_matching(item)
         if key not in seen:
             seen.add(key)
             ordered.append(item)
@@ -104,7 +119,7 @@ def extract_action_items(text: str) -> List[str]:
     seen = set()
     ordered = []
     for item in actions:
-        key = item.lower()
+        key = normalize_for_matching(item)
         if key not in seen:
             seen.add(key)
             ordered.append(item)
@@ -113,7 +128,9 @@ def extract_action_items(text: str) -> List[str]:
 
 
 def build_evidence_map(text: str, extracted: Dict[str, List[str]]) -> Dict[str, Dict[str, str]]:
-    sentences = split_sentences(text)
+    chunks = split_sentences(text)
+    normalized_chunks = [(chunk, normalize_for_matching(chunk)) for chunk in chunks]
+
     evidence = {
         "deadlines": {},
         "requested_documents": {},
@@ -121,11 +138,15 @@ def build_evidence_map(text: str, extracted: Dict[str, List[str]]) -> Dict[str, 
     }
 
     for category, items in extracted.items():
+        if category == "evidence":
+            continue
+
         for item in items:
-            item_lower = item.lower()
-            for sentence in sentences:
-                if item_lower in sentence.lower():
-                    evidence[category][item] = sentence
+            normalized_item = normalize_for_matching(item)
+
+            for original_chunk, normalized_chunk in normalized_chunks:
+                if normalized_item in normalized_chunk:
+                    evidence[category][item] = original_chunk
                     break
 
     return evidence
