@@ -66,6 +66,14 @@ Student Services""",
     },
 }
 
+DEMO_SCRIPT = [
+    "Start with Housing follow-up to show a clean end-to-end run.",
+    "Move to Financial aid review to show sentence-based document extraction.",
+    "Then show Immigration update to highlight workflow tagging.",
+    "Finish with Mixed admin case to show multiple workflows in one message.",
+    "Optionally end with pasted text or upload mode for a live example.",
+]
+
 
 def run_pipeline_from_text(text: str):
     extracted = extract_information(text)
@@ -237,6 +245,7 @@ with st.sidebar:
     st.header("Demo Controls")
     presenter_mode = st.checkbox("Presenter mode", value=False)
     comparison_mode = st.checkbox("Comparison mode", value=False)
+    show_demo_script = st.checkbox("Show demo script panel", value=True)
     input_mode = st.radio(
         "Input mode",
         ["Demo preset", "Sample file", "Paste text", "Upload file"],
@@ -311,6 +320,15 @@ with hero_right:
     )
 
 st.divider()
+
+if show_demo_script:
+    with st.expander("Guided Demo Script", expanded=False):
+        st.markdown("### Suggested presentation flow")
+        for i, step in enumerate(DEMO_SCRIPT, start=1):
+            st.write(f"{i}. {step}")
+        st.markdown("### Preset explanations")
+        for name, preset in DEMO_PRESETS.items():
+            st.write(f"- **{name}**: {preset['description']}")
 
 st.subheader("Quick Demo Launch")
 q1, q2, q3, q4 = st.columns(4)
