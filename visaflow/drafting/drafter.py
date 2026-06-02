@@ -22,6 +22,34 @@ def generate_recommended_next_action(plan: Plan) -> str:
     return "Recommended next action: review the request again for missing details."
 
 
+def generate_short_summary(plan: Plan, extracted: dict) -> str:
+    deadlines = extracted.get("deadlines", [])
+    documents = extracted.get("requested_documents", [])
+    actions = extracted.get("action_items", [])
+
+    if not plan.tasks:
+        return (
+            "Short summary\n\n"
+            "- Limited signal detected\n"
+            "- No clear workflow generated\n"
+            "- Next step: request a fuller message or complete email thread"
+        )
+
+    lines = []
+    lines.append("Short summary")
+    lines.append("")
+    lines.append(f"- {generate_recommended_next_action(plan).replace('Recommended next action: ', 'Next action: ')}")
+    lines.append(f"- Deadlines: {len(deadlines)}")
+    lines.append(f"- Documents: {len(documents)}")
+    lines.append(f"- Actions: {len(actions)}")
+
+    urgent = [task.task for task in plan.tasks if task.status == "urgent"]
+    if urgent:
+        lines.append(f"- Urgent item: {urgent[0]}")
+
+    return "\n".join(lines)
+
+
 def generate_next_step_summary(plan: Plan) -> str:
     if not plan.tasks:
         return (
