@@ -183,7 +183,7 @@ st.markdown(
     """
 <style>
 .block-container {
-    padding-top: 2rem;
+    padding-top: 1.5rem;
     padding-bottom: 2rem;
     max-width: 1250px;
 }
@@ -197,9 +197,6 @@ div[data-testid="stMetric"] {
 """,
     unsafe_allow_html=True,
 )
-
-st.title("VisaFlow")
-st.caption("AI operations agent for international-student bureaucracy")
 
 sample_files = sorted([p.name for p in SAMPLES_DIR.glob("*.txt")])
 
@@ -234,25 +231,47 @@ with st.sidebar:
 
     run_pipeline = st.button("Run pipeline", use_container_width=True)
 
-if presenter_mode:
-    st.markdown(
-        """
-VisaFlow converts administrative emails into structured operations support:
+hero_left, hero_right = st.columns([1.35, 0.9])
+
+with hero_left:
+    st.markdown("# VisaFlow")
+    st.markdown("**AI operations agent for international-student bureaucracy**")
+    if presenter_mode:
+        st.markdown(
+            """
+A local demo tool for turning messy administrative requests into:
 - extracted requirements
-- prioritized tasks
-- editable response drafts
+- prioritized task planning
+- usable response drafts
 """
-    )
-else:
-    st.markdown(
-        """
-VisaFlow turns administrative communication into a clearer workflow:
+        )
+    else:
+        st.markdown(
+            """
+VisaFlow helps turn administrative communication into a clearer workflow:
 - extract deadlines, requested documents, and action items
-- show supporting evidence
+- surface evidence and confidence
 - build a prioritized task plan
-- generate draft responses that can be edited and downloaded
+- generate editable response outputs
 """
+        )
+
+with hero_right:
+    current_mode_label = input_mode
+    current_case_label = selected_preset if input_mode == "Demo preset" and selected_preset else "Custom input"
+    st.markdown(
+        f"""
+<div style="border:1px solid #e5e7eb;border-radius:16px;padding:16px;background:#ffffff;">
+  <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Current demo state</div>
+  <div style="font-size:18px;font-weight:700;margin-bottom:8px;">{current_case_label}</div>
+  <div style="font-size:13px;color:#4b5563;">Mode: {current_mode_label}</div>
+  <div style="font-size:13px;color:#4b5563;">Presenter mode: {"on" if presenter_mode else "off"}</div>
+</div>
+""",
+        unsafe_allow_html=True,
     )
+
+st.divider()
 
 if run_pipeline:
     source_text = ""
