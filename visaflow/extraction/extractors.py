@@ -47,6 +47,39 @@ def clean_document_phrase(text: str) -> str:
     return text
 
 
+def score_deadline_confidence(item: str) -> float:
+    lowered = item.lower()
+    if any(month.lower() in lowered for month in [
+        "january", "february", "march", "april", "may", "june",
+        "july", "august", "september", "october", "november", "december"
+    ]):
+        return 0.95
+    if "within" in lowered:
+        return 0.80
+    return 0.70
+
+
+def score_document_confidence(item: str) -> float:
+    lowered = item.lower()
+    strong_terms = ["passport", "i-20", "bank statement", "agreement", "statement of support", "enrollment"]
+    if any(term in lowered for term in strong_terms):
+        return 0.90
+    if len(item.split()) >= 2:
+        return 0.80
+    return 0.65
+
+
+def score_action_confidence(item: str) -> float:
+    lowered = item.lower()
+    if lowered.startswith("please "):
+        return 0.92
+    if "reply" in lowered or "respond" in lowered or "confirm" in lowered:
+        return 0.88
+    if "upload" in lowered or "submit" in lowered:
+        return 0.90
+    return 0.70
+
+
 def extract_deadlines(text: str) -> List[str]:
     deadlines = []
 
@@ -156,7 +189,7 @@ def build_evidence_map(text: str, extracted: Dict[str, List[str]]) -> Dict[str, 
     }
 
     for category, items in extracted.items():
-        if category == "evidence":
+        if category in {"evidence", "confidence"}:
             continue
 
         for item in items:
@@ -170,6 +203,25 @@ def build_evidence_map(text: str, extracted: Dict[str, List[str]]) -> Dict[str, 
     return evidence
 
 
+def build_confidence_map(extracted: Dict[str, List[str]]) -> Dict[str, Dict[str, float]]:
+    confidence = {
+        "deadlines": {},
+        "requested_documents": {},
+        "action_items": {},
+    }
+
+    for item in extracted.get("deadlines", []):
+        confidence["deadlines"][item] = score_deadline_confidence(item)
+
+    for item in extracted.get("requested_documents", []):
+        confidence["requested_documents"][item] = score_document_confidence(item)
+
+    for item in extracted.get("action_items", []):
+        confidence["action_items"][item] = score_action_confidence(item)
+
+    return confidence
+
+
 def extract_information(text: str) -> Dict[str, object]:
     extracted = {
         "deadlines": extract_deadlines(text),
@@ -177,4 +229,5 @@ def extract_information(text: str) -> Dict[str, object]:
         "action_items": extract_action_items(text),
     }
     extracted["evidence"] = build_evidence_map(text, extracted)
+    extracted["confidence"] = build_confidence_map(extracted)
     return extracted
