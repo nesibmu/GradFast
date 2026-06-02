@@ -324,6 +324,23 @@ if run_pipeline:
             st.caption("No tasks match the selected filters.")
 
         st.divider()
+
+        with st.expander("Trace View", expanded=False):
+            st.markdown("### Source to Output Mapping")
+            for category in ["deadlines", "requested_documents", "action_items"]:
+                items = extracted.get(category, [])
+                if items:
+                    st.markdown(f"**{category.replace('_', ' ').title()}**")
+                    for item in items:
+                        matched_tasks = [task.task for task in plan.tasks if item.lower() in task.task.lower()]
+                        snippet = evidence.get(category, {}).get(item, "No snippet found.")
+                        st.markdown(
+                            f"- **Item:** {item}\n"
+                            f"  \n  **Evidence:** {snippet}\n"
+                            f"  \n  **Mapped tasks:** {matched_tasks if matched_tasks else 'None'}"
+                        )
+
+        st.divider()
         st.subheader("Response Workspace")
 
         tab1, tab2, tab3, tab4 = st.tabs(["Summary", "Baseline Draft", "Enhanced Draft", "Checklist"])
