@@ -7,31 +7,67 @@ SOURCE_ORDER = {"deadline": 0, "requested_document": 1, "action_item": 2}
 WORKFLOW_ORDER = {"housing": 0, "financial_aid": 1, "immigration": 2, "general": 3}
 
 
-def infer_workflow_type(text: str) -> str:
+def workflow_term_scores(text: str):
     lowered = text.lower()
 
     housing_terms = [
         "housing", "room assignment", "housing agreement", "housing contract",
-        "contract request", "lease", "residential", "assignment"
+        "contract request", "lease", "residential", "assignment", "room"
     ]
     finance_terms = [
         "financial aid", "bank statement", "statement of support",
-        "funding", "payment", "tuition", "billing", "finance"
+        "funding", "payment", "tuition", "billing", "finance", "support"
     ]
     immigration_terms = [
         "passport", "i-20", "visa", "immigration", "sevis", "travel signature"
     ]
 
-    scores = {
+    return {
         "housing": sum(term in lowered for term in housing_terms),
         "financial_aid": sum(term in lowered for term in finance_terms),
         "immigration": sum(term in lowered for term in immigration_terms),
     }
 
+
+def infer_workflow_type(text: str) -> str:
+    scores = workflow_term_scores(text)
     best_workflow = max(scores, key=scores.get)
     if scores[best_workflow] == 0:
         return "general"
     return best_workflow
+
+
+def infer_workflow_type_with_context(text: str, document_tasks=None) -> str:
+    direct = infer_workflow_type(text)
+    if direct != "general":
+        return direct
+
+    lowered = text.lower()
+
+    generic_admin_phrases = [
+        "student portal",
+        "complete your file",
+        "finish the review",
+        "confirm completion",
+        "confirm once",
+        "uploaded",
+        "materials",
+        "documents have been uploaded",
+        "review",
+        "file",
+    ]
+
+    if any(phrase in lowered for phrase in generic_admin_phrases) and document_tasks:
+        counts = {"housing": 0, "financial_aid": 0, "immigration": 0}
+        for task in document_tasks:
+            if task.workflow_type in counts:
+                counts[task.workflow_type] += 1
+
+        best = max(counts, key=counts.get)
+        if counts[best] > 0:
+            return best
+
+    return "general"
 
 
 def infer_priority(task_text: str, source: str) -> str:
@@ -117,12 +153,20 @@ def build_upload_packet_task(document_tasks):
     if not document_tasks:
         return None
 
+    workflow_counts = {"housing": 0, "financial_aid": 0, "immigration": 0}
+    for task in document_tasks:
+        if task.workflow_type in workflow_counts:
+            workflow_counts[task.workflow_type] += 1
+
+    dominant = max(workflow_counts, key=workflow_counts.get)
+    workflow_type = dominant if workflow_counts[dominant] > 0 else "general"
+
     depends_on = [task.task for task in document_tasks]
     return PlannedTask(
         task="Compile and upload requested document packet",
         priority="high",
         source="action_item",
-        workflow_type="general",
+        workflow_type=workflow_type,
         status="blocked",
         depends_on=depends_on,
     )
@@ -188,7 +232,7 @@ def build_task_plan(extracted: dict) -> Plan:
 
     for action in extracted.get("action_items", []):
         task_text = f"Complete action: {action}"
-        workflow_type = infer_workflow_type(action)
+        workflow_type = infer_workflow_type_with_context(action, document_tasks=document_tasks)
         depends_on = infer_dependencies(action, document_tasks, upload_packet_task)
         priority = infer_priority(task_text, "action_item")
         tasks.append(
