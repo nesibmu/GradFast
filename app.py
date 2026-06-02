@@ -15,6 +15,14 @@ def run_pipeline_from_text(text: str, enhanced_draft: bool):
     return extracted, plan, summary, draft
 
 
+def priority_emoji(priority: str) -> str:
+    if priority == "high":
+        return "🔴"
+    if priority == "medium":
+        return "🟡"
+    return "⚪"
+
+
 st.set_page_config(page_title="VisaFlow", layout="wide")
 
 st.title("VisaFlow")
@@ -53,15 +61,27 @@ if run_pipeline:
     else:
         extracted, plan, summary, draft = run_pipeline_from_text(source_text, enhanced_draft)
 
-        top_left, top_right = st.columns([1.2, 1])
+        deadlines = extracted.get("deadlines", [])
+        documents = extracted.get("requested_documents", [])
+        actions = extracted.get("action_items", [])
 
-        with top_left:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Deadlines", len(deadlines))
+        m2.metric("Documents", len(documents))
+        m3.metric("Actions", len(actions))
+        m4.metric("Planned Tasks", len(plan.tasks))
+
+        st.divider()
+
+        left, right = st.columns([1.2, 1])
+
+        with left:
             st.subheader("Source")
             st.text_area("Input text", source_text, height=320)
 
-        with top_right:
+        with right:
             st.subheader("Next-Step Summary")
-            st.text(summary, height=320)
+            st.text_area("Summary", summary, height=320)
 
         st.divider()
 
@@ -69,7 +89,6 @@ if run_pipeline:
 
         with col1:
             st.subheader("Deadlines")
-            deadlines = extracted.get("deadlines", [])
             if deadlines:
                 for item in deadlines:
                     st.write(f"- {item}")
@@ -78,16 +97,14 @@ if run_pipeline:
 
         with col2:
             st.subheader("Requested Documents")
-            docs = extracted.get("requested_documents", [])
-            if docs:
-                for item in docs:
+            if documents:
+                for item in documents:
                     st.write(f"- {item}")
             else:
                 st.write("None found.")
 
         with col3:
             st.subheader("Action Items")
-            actions = extracted.get("action_items", [])
             if actions:
                 for item in actions:
                     st.write(f"- {item}")
@@ -97,14 +114,23 @@ if run_pipeline:
         st.divider()
 
         st.subheader("Planned Tasks")
+
         if plan.tasks:
+            grouped = {}
             for task in plan.tasks:
-                extra = ""
-                if task.depends_on:
-                    extra = f" | depends on: {', '.join(task.depends_on)}"
-                st.write(
-                    f"- [{task.workflow_type}] {task.task} ({task.priority}){extra}"
-                )
+                grouped.setdefault(task.workflow_type, []).append(task)
+
+            for workflow_type, tasks in grouped.items():
+                st.markdown(f"**{workflow_type.replace('_', ' ').title()}**")
+                for task in tasks:
+                    dep_text = ""
+                    if task.depends_on:
+                        dep_text = f"  \nDepends on: {', '.join(task.depends_on)}"
+                    st.markdown(
+                        f"{priority_emoji(task.priority)} **{task.task}**  \n"
+                        f"Priority: `{task.priority}` | Source: `{task.source}`{dep_text}"
+                    )
+                st.write("")
         else:
             st.write("No tasks generated.")
 
@@ -115,12 +141,13 @@ if run_pipeline:
             for category in ["deadlines", "requested_documents", "action_items"]:
                 category_evidence = evidence.get(category, {})
                 if category_evidence:
-                    st.write(f"**{category.replace('_', ' ').title()}**")
-                    for item, snippet in category_evidence.items():
-                        st.write(f"- {item}: {snippet}")
+                    with st.expander(category.replace("_", " ").title(), expanded=False):
+                        for item, snippet in category_evidence.items():
+                            st.write(f"**{item}**")
+                            st.caption(snippet)
 
         st.divider()
         st.subheader("Draft Response")
-        st.text(draft)
+        st.text_area("Draft", draft, height=240)
 else:
     st.info("Choose a sample file or paste text, then click 'Run pipeline'.")
