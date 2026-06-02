@@ -694,9 +694,9 @@ elif results is not None:
     st.markdown("### Task Digest")
     task_digest_text = st.text_area("Task Digest", task_digest, height=220)
     st.download_button(
-        label="Download task digest",
+        label="Export task digest",
         data=task_digest_text,
-        file_name="visaflow_task_digest.txt",
+        file_name="visaflow_task_digest_export.txt",
         mime="text/plain",
         use_container_width=True,
         key="download_task_digest",
@@ -707,9 +707,9 @@ elif results is not None:
         with tab1:
             enhanced_editable = st.text_area("Enhanced Draft", enhanced_draft, height=320)
             st.download_button(
-                label="Download enhanced draft",
+                label="Export enhanced draft",
                 data=enhanced_editable,
-                file_name="visaflow_enhanced_draft.txt",
+                file_name="visaflow_enhanced_draft_export.txt",
                 mime="text/plain",
                 use_container_width=True,
                 key="download_enhanced_minimal",
@@ -718,9 +718,9 @@ elif results is not None:
         with tab2:
             checklist_text = st.text_area("Checklist", checklist, height=320)
             st.download_button(
-                label="Download checklist",
+                label="Export checklist",
                 data=checklist_text,
-                file_name="visaflow_checklist.txt",
+                file_name="visaflow_checklist_export.txt",
                 mime="text/plain",
                 use_container_width=True,
                 key="download_checklist_minimal",
@@ -731,7 +731,7 @@ elif results is not None:
             st.download_button(
                 label="Download ops handoff",
                 data=ops_text,
-                file_name="visaflow_operations_handoff.txt",
+                file_name="visaflow_operations_handoff_export.txt",
                 mime="text/plain",
                 use_container_width=True,
                 key="download_ops_handoff_minimal",
@@ -835,9 +835,9 @@ elif results is not None:
     st.markdown("### Task Digest")
     task_digest_text = st.text_area("Task Digest", task_digest, height=220)
     st.download_button(
-        label="Download task digest",
+        label="Export task digest",
         data=task_digest_text,
-        file_name="visaflow_task_digest.txt",
+        file_name="visaflow_task_digest_export.txt",
         mime="text/plain",
         use_container_width=True,
         key="download_task_digest",
@@ -849,9 +849,9 @@ elif results is not None:
             with tab1:
                 enhanced_editable = st.text_area("Enhanced Draft", enhanced_draft, height=320)
                 st.download_button(
-                    label="Download enhanced draft",
+                    label="Export enhanced draft",
                     data=enhanced_editable,
-                    file_name="visaflow_enhanced_draft.txt",
+                    file_name="visaflow_enhanced_draft_export.txt",
                     mime="text/plain",
                     use_container_width=True,
                     key="download_enhanced_presenter",
@@ -859,9 +859,9 @@ elif results is not None:
             with tab2:
                 checklist_text = st.text_area("Checklist", checklist, height=320)
                 st.download_button(
-                    label="Download checklist",
+                    label="Export checklist",
                     data=checklist_text,
-                    file_name="visaflow_checklist.txt",
+                    file_name="visaflow_checklist_export.txt",
                     mime="text/plain",
                     use_container_width=True,
                     key="download_checklist_presenter",
@@ -871,7 +871,7 @@ elif results is not None:
                 st.download_button(
                     label="Download ops handoff",
                     data=ops_text,
-                    file_name="visaflow_operations_handoff.txt",
+                    file_name="visaflow_operations_handoff_export.txt",
                     mime="text/plain",
                     use_container_width=True,
                     key="download_ops_handoff_presenter",
@@ -882,9 +882,9 @@ elif results is not None:
             with tab1:
                 st.text_area("Summary view", summary, height=280)
                 st.download_button(
-                    label="Download summary",
+                    label="Export full summary",
                     data=summary,
-                    file_name="visaflow_summary.txt",
+                    file_name="visaflow_full_summary_export.txt",
                     mime="text/plain",
                     use_container_width=True,
                     key="download_summary",
@@ -893,9 +893,9 @@ elif results is not None:
             with tab2:
                 baseline_editable = st.text_area("Baseline Draft", baseline_draft, height=320)
                 st.download_button(
-                    label="Download baseline draft",
+                    label="Export baseline draft",
                     data=baseline_editable,
-                    file_name="visaflow_baseline_draft.txt",
+                    file_name="visaflow_baseline_draft_export.txt",
                     mime="text/plain",
                     use_container_width=True,
                     key="download_baseline",
@@ -904,9 +904,9 @@ elif results is not None:
             with tab3:
                 enhanced_editable = st.text_area("Enhanced Draft", enhanced_draft, height=320)
                 st.download_button(
-                    label="Download enhanced draft",
+                    label="Export enhanced draft",
                     data=enhanced_editable,
-                    file_name="visaflow_enhanced_draft.txt",
+                    file_name="visaflow_enhanced_draft_export.txt",
                     mime="text/plain",
                     use_container_width=True,
                     key="download_enhanced",
@@ -915,9 +915,9 @@ elif results is not None:
             with tab5:
                 checklist_text = st.text_area("Checklist", checklist, height=320)
                 st.download_button(
-                    label="Download checklist",
+                    label="Export checklist",
                     data=checklist_text,
-                    file_name="visaflow_checklist.txt",
+                    file_name="visaflow_checklist_export.txt",
                     mime="text/plain",
                     use_container_width=True,
                     key="download_checklist",
@@ -928,7 +928,7 @@ elif results is not None:
                 st.download_button(
                     label="Download ops handoff",
                     data=ops_text,
-                    file_name="visaflow_operations_handoff.txt",
+                    file_name="visaflow_operations_handoff_export.txt",
                     mime="text/plain",
                     use_container_width=True,
                     key="download_ops_handoff",
