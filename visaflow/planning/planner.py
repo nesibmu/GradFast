@@ -47,7 +47,7 @@ def infer_priority(task_text: str, source: str) -> str:
     if source == "action_item":
         if any(word in lowered for word in ["as soon as possible", "respond", "reply", "confirm"]):
             return "medium"
-        if any(word in lowered for word in ["submit", "upload"]):
+        if any(word in lowered for word in ["submit", "upload", "portal"]):
             return "high"
         return "low"
 
@@ -91,21 +91,36 @@ def sort_tasks(tasks):
     )
 
 
-def infer_dependencies(action_text: str, document_tasks):
+def build_upload_packet_task(document_tasks):
+    if not document_tasks:
+        return None
+
+    depends_on = [task.task for task in document_tasks]
+    return PlannedTask(
+        task="Compile and upload requested document packet",
+        priority="high",
+        source="action_item",
+        workflow_type="general",
+        status="blocked",
+        depends_on=depends_on,
+    )
+
+
+def infer_dependencies(action_text: str, document_tasks, upload_packet_task):
     lowered = action_text.lower()
+
+    if "confirm" in lowered or "reply" in lowered or "respond" in lowered:
+        deps = []
+        if upload_packet_task is not None:
+            deps.append(upload_packet_task.task)
+        deps.extend(task.task for task in document_tasks)
+        return deps
+
+    if "upload" in lowered or "portal" in lowered or "submit" in lowered:
+        return [task.task for task in document_tasks]
 
     matching_dependencies = []
     for task in document_tasks:
-        task_text = task.task.lower()
-
-        if "confirm" in lowered or "reply" in lowered or "respond" in lowered:
-            matching_dependencies.append(task.task)
-            continue
-
-        if "upload" in lowered:
-            matching_dependencies.append(task.task)
-            continue
-
         if task.workflow_type != "general" and task.workflow_type in lowered:
             matching_dependencies.append(task.task)
 
@@ -143,10 +158,14 @@ def build_task_plan(extracted: dict) -> Plan:
         tasks.append(planned)
         document_tasks.append(planned)
 
+    upload_packet_task = build_upload_packet_task(document_tasks)
+    if upload_packet_task is not None:
+        tasks.append(upload_packet_task)
+
     for action in extracted.get("action_items", []):
         task_text = f"Complete action: {action}"
         workflow_type = infer_workflow_type(action)
-        depends_on = infer_dependencies(action, document_tasks)
+        depends_on = infer_dependencies(action, document_tasks, upload_packet_task)
         priority = infer_priority(action, "action_item")
         tasks.append(
             PlannedTask(
