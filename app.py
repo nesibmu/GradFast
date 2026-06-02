@@ -185,6 +185,28 @@ def render_task_card(task):
     )
 
 
+def render_comparison_column(title: str, result: dict):
+    extracted = result["extracted"]
+    plan = result["plan"]
+    summary = result["summary"]
+    confidence = extracted.get("confidence", {})
+
+    deadlines = extracted.get("deadlines", [])
+    documents = extracted.get("requested_documents", [])
+    actions = extracted.get("action_items", [])
+
+    st.markdown(f"### {title}")
+    st.text_area(f"{title} summary", summary, height=180)
+    a, b, c = st.columns(3)
+    a.metric("Deadlines", len(deadlines))
+    b.metric("Documents", len(documents))
+    c.metric("Tasks", len(plan.tasks))
+
+    render_compact_findings("Deadlines", deadlines[:3], confidence.get("deadlines", {}))
+    render_compact_findings("Requested Documents", documents[:4], confidence.get("requested_documents", {}))
+    render_compact_findings("Action Items", actions[:3], confidence.get("action_items", {}))
+
+
 st.set_page_config(page_title="VisaFlow", layout="wide")
 
 st.markdown(
@@ -214,6 +236,7 @@ sample_files = sorted([p.name for p in SAMPLES_DIR.glob("*.txt")])
 with st.sidebar:
     st.header("Demo Controls")
     presenter_mode = st.checkbox("Presenter mode", value=False)
+    comparison_mode = st.checkbox("Comparison mode", value=False)
     input_mode = st.radio(
         "Input mode",
         ["Demo preset", "Sample file", "Paste text", "Upload file"],
@@ -225,20 +248,24 @@ with st.sidebar:
     pasted_text = ""
     uploaded_file = None
 
-    if input_mode == "Demo preset":
-        selected_preset = st.selectbox("Choose a preset", list(DEMO_PRESETS.keys()), index=0)
-        if not presenter_mode:
-            st.caption(DEMO_PRESETS[selected_preset]["description"])
-    elif input_mode == "Sample file":
-        selected_file = st.selectbox("Choose a sample file", sample_files)
-    elif input_mode == "Paste text":
-        pasted_text = st.text_area(
-            "Paste email or document text",
-            height=220,
-            placeholder="Paste an administrative email or document here...",
-        )
+    if comparison_mode:
+        compare_left = st.selectbox("Left preset", list(DEMO_PRESETS.keys()), index=0, key="compare_left")
+        compare_right = st.selectbox("Right preset", list(DEMO_PRESETS.keys()), index=1, key="compare_right")
     else:
-        uploaded_file = st.file_uploader("Upload a .txt file", type=["txt"])
+        if input_mode == "Demo preset":
+            selected_preset = st.selectbox("Choose a preset", list(DEMO_PRESETS.keys()), index=0)
+            if not presenter_mode:
+                st.caption(DEMO_PRESETS[selected_preset]["description"])
+        elif input_mode == "Sample file":
+            selected_file = st.selectbox("Choose a sample file", sample_files)
+        elif input_mode == "Paste text":
+            pasted_text = st.text_area(
+                "Paste email or document text",
+                height=220,
+                placeholder="Paste an administrative email or document here...",
+            )
+        else:
+            uploaded_file = st.file_uploader("Upload a .txt file", type=["txt"])
 
     run_pipeline = st.button("Run pipeline", use_container_width=True)
     clear_results = st.button("Clear current results", use_container_width=True)
@@ -269,8 +296,8 @@ VisaFlow helps turn administrative communication into a clearer workflow:
         )
 
 with hero_right:
-    current_mode_label = input_mode
-    current_case_label = selected_preset if input_mode == "Demo preset" and selected_preset else "Custom input"
+    current_mode_label = "Comparison" if comparison_mode else input_mode
+    current_case_label = "Preset comparison" if comparison_mode else (selected_preset if input_mode == "Demo preset" and selected_preset else "Custom input")
     st.markdown(
         f"""
 <div style="border:1px solid #e5e7eb;border-radius:16px;padding:16px;background:#ffffff;">
@@ -306,27 +333,44 @@ if quick_clicked is not None:
     st.session_state.results = run_pipeline_from_text(DEMO_PRESETS[quick_clicked]["text"])
 
 if run_pipeline:
-    source_text = ""
-
-    if input_mode == "Demo preset":
-        source_text = DEMO_PRESETS[selected_preset]["text"]
-    elif input_mode == "Sample file":
-        document = load_document(SAMPLES_DIR / selected_file)
-        source_text = document.text
-    elif input_mode == "Paste text":
-        source_text = pasted_text.strip()
+    if comparison_mode:
+        st.session_state.results = {
+            "comparison": True,
+            "left": run_pipeline_from_text(DEMO_PRESETS[compare_left]["text"]),
+            "right": run_pipeline_from_text(DEMO_PRESETS[compare_right]["text"]),
+            "left_name": compare_left,
+            "right_name": compare_right,
+        }
     else:
-        if uploaded_file is not None:
-            source_text = uploaded_file.read().decode("utf-8").strip()
+        source_text = ""
 
-    if not source_text:
-        st.warning("Please choose a preset, enter text, or upload a file before running the pipeline.")
-    else:
-        st.session_state.results = run_pipeline_from_text(source_text)
+        if input_mode == "Demo preset":
+            source_text = DEMO_PRESETS[selected_preset]["text"]
+        elif input_mode == "Sample file":
+            document = load_document(SAMPLES_DIR / selected_file)
+            source_text = document.text
+        elif input_mode == "Paste text":
+            source_text = pasted_text.strip()
+        else:
+            if uploaded_file is not None:
+                source_text = uploaded_file.read().decode("utf-8").strip()
+
+        if not source_text:
+            st.warning("Please choose a preset, enter text, or upload a file before running the pipeline.")
+        else:
+            st.session_state.results = run_pipeline_from_text(source_text)
 
 results = st.session_state.results
 
-if results is not None:
+if results is not None and isinstance(results, dict) and results.get("comparison"):
+    st.subheader("Preset Comparison")
+    left_col, right_col = st.columns(2)
+    with left_col:
+        render_comparison_column(results["left_name"], results["left"])
+    with right_col:
+        render_comparison_column(results["right_name"], results["right"])
+
+elif results is not None:
     source_text = results["source_text"]
     extracted = results["extracted"]
     plan = results["plan"]
