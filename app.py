@@ -499,6 +499,12 @@ with control_right:
         st.session_state.results = None
 
 if not minimal_view:
+    with st.expander("Best Demo Comparison", expanded=False):
+        st.markdown("### Recommended comparison pair")
+        st.write(f'- Left case: **{BEST_COMPARISON_GUIDE["left"]}**')
+        st.write(f'- Right case: **{BEST_COMPARISON_GUIDE["right"]}**')
+        st.write(f'- Why it works: {BEST_COMPARISON_GUIDE["reason"]}')
+
     with st.expander("Final Demo Checklist", expanded=False):
         st.markdown("### Recommended recording flow")
         for i, step in enumerate(FINAL_DEMO_CHECKLIST, start=1):
