@@ -691,16 +691,16 @@ elif results is not None:
         st.divider()
         st.subheader("Outputs")
 
-    st.markdown("### Task Digest")
-    task_digest_text = st.text_area("Task Digest", task_digest, height=220)
-    st.download_button(
-        label="Export task digest",
-        data=task_digest_text,
-        file_name="visaflow_task_digest_export.txt",
-        mime="text/plain",
-        use_container_width=True,
-        key="download_task_digest",
-    )
+        st.markdown("### Task Digest")
+        task_digest_text = st.text_area("Task Digest", task_digest, height=220)
+        st.download_button(
+            label="Export task digest",
+            data=task_digest_text,
+            file_name="visaflow_task_digest_export.txt",
+            mime="text/plain",
+            use_container_width=True,
+            key="download_task_digest",
+        )
 
         tab1, tab2, tab3 = st.tabs(["Enhanced Draft", "Checklist", "Operations Handoff"])
 
@@ -832,16 +832,16 @@ elif results is not None:
         st.divider()
         st.subheader("Outputs")
 
-    st.markdown("### Task Digest")
-    task_digest_text = st.text_area("Task Digest", task_digest, height=220)
-    st.download_button(
-        label="Export task digest",
-        data=task_digest_text,
-        file_name="visaflow_task_digest_export.txt",
-        mime="text/plain",
-        use_container_width=True,
-        key="download_task_digest",
-    )
+        st.markdown("### Task Digest")
+        task_digest_text = st.text_area("Task Digest", task_digest, height=220)
+        st.download_button(
+            label="Export task digest",
+            data=task_digest_text,
+            file_name="visaflow_task_digest_export.txt",
+            mime="text/plain",
+            use_container_width=True,
+            key="download_task_digest",
+        )
 
 
         if presenter_mode:
