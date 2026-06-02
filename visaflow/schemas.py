@@ -18,6 +18,7 @@ class PlannedTask:
     workflow_type: str = "general"
     status: str = "ready"
     depends_on: List[str] = field(default_factory=list)
+    blocking_reason: str = ""
 
 
 @dataclass

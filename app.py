@@ -206,6 +206,10 @@ def render_task_card(task):
     if task.depends_on:
         depends = f"<div style='margin-top:8px;font-size:12px;color:#6b7280;'>Depends on: {', '.join(task.depends_on)}</div>"
 
+    blocking = ""
+    if getattr(task, "blocking_reason", ""):
+        blocking = f"<div style='margin-top:6px;font-size:12px;color:#92400e;'>Blocked because: {task.blocking_reason}</div>"
+
     st.markdown(
         f"""
 <div style="border-left:6px solid {color};border-radius:12px;padding:14px 16px;margin-bottom:12px;background:#ffffff;border:1px solid #e5e7eb;">
@@ -217,6 +221,7 @@ def render_task_card(task):
     workflow: {task.workflow_type} • source: {task.source} • priority: {task.priority}
   </div>
   {depends}
+  {blocking}
 </div>
 """,
         unsafe_allow_html=True,

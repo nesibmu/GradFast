@@ -122,6 +122,17 @@ def infer_status(source: str, priority: str, depends_on):
     return "ready"
 
 
+def summarize_dependencies(depends_on):
+    if not depends_on:
+        return ""
+
+    if len(depends_on) == 1:
+        return f"Waiting on: {depends_on[0]}"
+    if len(depends_on) == 2:
+        return f"Waiting on: {depends_on[0]} and {depends_on[1]}"
+    return f"Waiting on {len(depends_on)} earlier steps, including {depends_on[0]}"
+
+
 def deduplicate_tasks(tasks):
     seen = set()
     unique_tasks = []
@@ -169,6 +180,7 @@ def build_upload_packet_task(document_tasks):
         workflow_type=workflow_type,
         status="blocked",
         depends_on=depends_on,
+        blocking_reason=summarize_dependencies(depends_on),
     )
 
 
@@ -209,6 +221,7 @@ def build_task_plan(extracted: dict) -> Plan:
                 source="deadline",
                 workflow_type="general",
                 status=infer_status("deadline", priority, []),
+                blocking_reason="",
             )
         )
 
@@ -222,6 +235,7 @@ def build_task_plan(extracted: dict) -> Plan:
             source="requested_document",
             workflow_type=workflow_type,
             status=infer_status("requested_document", priority, []),
+            blocking_reason="",
         )
         tasks.append(planned)
         document_tasks.append(planned)
@@ -243,6 +257,7 @@ def build_task_plan(extracted: dict) -> Plan:
                 workflow_type=workflow_type,
                 depends_on=depends_on,
                 status=infer_status("action_item", priority, depends_on),
+                blocking_reason=summarize_dependencies(depends_on),
             )
         )
 
