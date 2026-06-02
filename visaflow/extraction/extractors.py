@@ -36,6 +36,34 @@ def split_sentences(text: str) -> List[str]:
     return cleaned
 
 
+def canonicalize_document_name(text: str) -> str:
+    lowered = normalize_for_matching(text)
+
+    replacements = [
+        (r"\bcopy of (your )?passport\b", "passport copy"),
+        (r"\bcurrent passport copy\b", "passport copy"),
+        (r"\bpassport copy\b", "passport copy"),
+        (r"\bcopy of passport\b", "passport copy"),
+        (r"\bcopy of (your )?current i-20\b", "current I-20"),
+        (r"\byour current i-20\b", "current I-20"),
+        (r"\bcurrent i-20\b", "current I-20"),
+        (r"\bi-20\b", "I-20"),
+        (r"\brecent bank statement\b", "bank statement"),
+        (r"\bupdated bank statement\b", "bank statement"),
+        (r"\bbank statement\b", "bank statement"),
+        (r"\bsigned housing agreement\b", "signed housing agreement"),
+        (r"\bhousing agreement\b", "housing agreement"),
+        (r"\bhousing contract request\b", "housing contract request"),
+        (r"\bstatement of support\b", "statement of support"),
+    ]
+
+    for pattern, replacement in replacements:
+        if re.search(pattern, lowered, flags=re.IGNORECASE):
+            return replacement
+
+    return text.strip()
+
+
 def clean_document_phrase(text: str) -> str:
     text = text.strip(" .,:;")
     text = re.sub(r"^(a|an|the|your|their)\s+", "", text, flags=re.IGNORECASE)
@@ -45,6 +73,7 @@ def clean_document_phrase(text: str) -> str:
     text = re.sub(r"\bupload\b", "", text, flags=re.IGNORECASE)
     text = re.sub(r"\bsubmit\b", "", text, flags=re.IGNORECASE)
     text = re.sub(r"\s+", " ", text).strip(" .,:;")
+    text = canonicalize_document_name(text)
     return text
 
 
