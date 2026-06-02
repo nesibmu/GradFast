@@ -499,7 +499,7 @@ with control_right:
         st.session_state.results = None
 
 if not minimal_view:
-    with st.expander("Best Demo Comparison", expanded=False):
+    with st.expander("Demo Comparison Guide", expanded=False):
         st.markdown("### Recommended comparison pair")
         st.write(f'- Left case: **{BEST_COMPARISON_GUIDE["left"]}**')
         st.write(f'- Right case: **{BEST_COMPARISON_GUIDE["right"]}**')
@@ -519,7 +519,7 @@ if show_demo_script and not minimal_view:
         for name, preset in DEMO_PRESETS.items():
             st.write(f"- **{name}**: {preset['description']}")
 
-st.subheader("Preset Notes and Usage")
+st.subheader("Preset Notes")
 
 if not comparison_mode and input_mode == "Demo preset" and selected_preset:
     st.markdown(
