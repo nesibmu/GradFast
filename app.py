@@ -9,6 +9,7 @@ from visaflow.drafting.drafter import (
     generate_next_step_summary,
     generate_action_checklist,
     generate_recommended_next_action,
+    generate_ops_handoff,
 )
 
 
@@ -84,6 +85,7 @@ def run_pipeline_from_text(text: str):
     summary = generate_next_step_summary(plan)
     recommended_next_action = generate_recommended_next_action(plan)
     checklist = generate_action_checklist(plan)
+    ops_handoff = generate_ops_handoff(plan, extracted)
     baseline_draft = draft_response_with_mode(plan, enhanced=False)
     enhanced_draft = draft_response_with_mode(plan, enhanced=True)
     return {
@@ -93,6 +95,7 @@ def run_pipeline_from_text(text: str):
         "summary": summary,
         "recommended_next_action": recommended_next_action,
         "checklist": checklist,
+        "ops_handoff": ops_handoff,
         "baseline_draft": baseline_draft,
         "enhanced_draft": enhanced_draft,
     }
@@ -492,6 +495,7 @@ elif results is not None:
     summary = results["summary"]
     recommended_next_action = results["recommended_next_action"]
     checklist = results["checklist"]
+    ops_handoff = results["ops_handoff"]
     baseline_draft = results["baseline_draft"]
     enhanced_draft = results["enhanced_draft"]
 
@@ -628,7 +632,7 @@ elif results is not None:
     st.subheader("Response Workspace")
 
     if presenter_mode:
-        tab1, tab2 = st.tabs(["Enhanced Draft", "Checklist"])
+        tab1, tab2, tab3 = st.tabs(["Enhanced Draft", "Checklist", "Ops Handoff"])
         with tab1:
             enhanced_editable = st.text_area("Enhanced Draft", enhanced_draft, height=320)
             st.download_button(
@@ -649,8 +653,18 @@ elif results is not None:
                 use_container_width=True,
                 key="download_checklist_presenter",
             )
+        with tab3:
+            ops_text = st.text_area("Ops Handoff", ops_handoff, height=320)
+            st.download_button(
+                label="Download ops handoff",
+                data=ops_text,
+                file_name="visaflow_ops_handoff.txt",
+                mime="text/plain",
+                use_container_width=True,
+                key="download_ops_handoff_presenter",
+            )
     else:
-        tab1, tab2, tab3, tab4 = st.tabs(["Summary", "Baseline Draft", "Enhanced Draft", "Checklist"])
+        tab1, tab2, tab3, tab4, tab5 = st.tabs(["Summary", "Baseline Draft", "Enhanced Draft", "Checklist", "Ops Handoff"])
 
         with tab1:
             st.text_area("Summary view", summary, height=280)
@@ -694,6 +708,17 @@ elif results is not None:
                 mime="text/plain",
                 use_container_width=True,
                 key="download_checklist",
+            )
+
+        with tab5:
+            ops_text = st.text_area("Ops Handoff", ops_handoff, height=320)
+            st.download_button(
+                label="Download ops handoff",
+                data=ops_text,
+                file_name="visaflow_ops_handoff.txt",
+                mime="text/plain",
+                use_container_width=True,
+                key="download_ops_handoff",
             )
 else:
     st.info("Choose a preset, sample file, pasted text, or uploaded file, then click Run pipeline, or use a Quick Demo Launch button.")

@@ -71,6 +71,45 @@ def generate_action_checklist(plan: Plan) -> str:
     return "\n".join(lines)
 
 
+def generate_ops_handoff(plan: Plan, extracted: dict) -> str:
+    deadlines = extracted.get("deadlines", [])
+    documents = extracted.get("requested_documents", [])
+    actions = extracted.get("action_items", [])
+
+    urgent = [task.task for task in plan.tasks if task.status == "urgent"]
+    ready = [task.task for task in plan.tasks if task.status == "ready"]
+    blocked = [task.task for task in plan.tasks if task.status == "blocked"]
+
+    lines = []
+    lines.append("Ops handoff")
+    lines.append("")
+    lines.append(generate_recommended_next_action(plan))
+    lines.append("")
+
+    lines.append("Requested items:")
+    if deadlines:
+        lines.append(f"- Deadlines: {', '.join(deadlines)}")
+    if documents:
+        lines.append(f"- Documents: {', '.join(documents)}")
+    if actions:
+        lines.append(f"- Actions: {', '.join(actions)}")
+    if not (deadlines or documents or actions):
+        lines.append("- No structured items extracted.")
+    lines.append("")
+
+    lines.append("Execution status:")
+    if urgent:
+        lines.append(f"- Urgent: {'; '.join(urgent[:3])}")
+    if ready:
+        lines.append(f"- Ready: {'; '.join(ready[:4])}")
+    if blocked:
+        lines.append(f"- Blocked: {'; '.join(blocked[:3])}")
+    if not (urgent or ready or blocked):
+        lines.append("- No operational tasks generated.")
+
+    return "\n".join(lines)
+
+
 def draft_response(plan: Plan) -> str:
     if not plan.tasks:
         return "No immediate action items were identified."
