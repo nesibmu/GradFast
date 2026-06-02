@@ -349,6 +349,26 @@ def compute_case_confidence(extracted: dict, plan) -> tuple:
     return ("low", avg_score)
 
 
+def classify_weak_case(source_text: str, extracted: dict, plan) -> str:
+    lowered = source_text.lower()
+    signal_count = (
+        len(extracted.get("deadlines", []))
+        + len(extracted.get("requested_documents", []))
+        + len(extracted.get("action_items", []))
+    )
+
+    if len(plan.tasks) > 0 or signal_count >= 3:
+        return "not_weak"
+
+    if any(term in lowered for term in ["checking in", "follow up", "quick follow up", "just checking"]):
+        return "generic_follow_up"
+
+    if any(term in lowered for term in ["send what you can", "soon", "let us know if anything changed"]):
+        return "soft_reminder"
+
+    return "incomplete_request"
+
+
 st.set_page_config(page_title="VisaFlow", layout="wide")
 
 st.markdown(
@@ -589,6 +609,7 @@ elif results is not None:
 
     quality = assess_input_quality(source_text, extracted, plan)
     case_confidence_label, case_confidence_score = compute_case_confidence(extracted, plan)
+    weak_case_label = classify_weak_case(source_text, extracted, plan)
 
     if quality == "very_low":
         st.warning("This input is very short. The app may not have enough information to build a strong workflow.")
@@ -596,6 +617,13 @@ elif results is not None:
         st.warning("Only limited structured information was found. Results may be incomplete.")
     elif quality == "medium":
         st.info("A partial workflow was detected. This is usable, but likely not a complete administrative request.")
+
+    if weak_case_label == "generic_follow_up":
+        st.info("This looks like a generic follow-up message rather than a detailed administrative request.")
+    elif weak_case_label == "soft_reminder":
+        st.info("This looks like a soft reminder message with limited operational detail.")
+    elif weak_case_label == "incomplete_request":
+        st.info("This looks like an incomplete request that would benefit from the full email thread.")
 
     urgent_count = len([task for task in plan.tasks if task.status == "urgent"])
     ready_count = len([task for task in plan.tasks if task.status == "ready"])
