@@ -68,13 +68,35 @@ Best,
 Student Services""",
         "description": "Shows a mixed workflow with housing, financial, and immigration-related tasks in one case.",
     },
+    "Escalated admin case": {
+        "text": """Subject: Urgent follow-up on housing, financial aid, and immigration items
+
+Hello Nesib,
+
+We are still missing your signed housing agreement, updated bank statement, current passport copy, current I-20, and statement of support.
+
+Please upload all materials through the student portal by June 10, 2026. You should also reply to this email by June 8, 2026 if you expect any delay. Once everything has been uploaded, please confirm completion so we can finish the review.
+
+Best,
+Student Services and Financial Support""",
+        "description": "Shows a denser multi-deadline case with multiple requested documents and follow-up actions.",
+    },
+    "Weak noisy case": {
+        "text": """Subject: quick follow up
+
+hi, just checking in on the file. send what you can soon and let us know if anything changed.
+
+thanks""",
+        "description": "Shows how the system behaves on weak or incomplete administrative text.",
+    },
 }
 
 DEMO_SCRIPT = [
-    "Start with Mixed admin case to show the strongest end-to-end example.",
-    "Use Housing follow-up if you want a simpler case after that.",
-    "Use Financial aid review to show sentence-based extraction.",
+    "Start with Mixed admin case to show the strongest clean end-to-end example.",
+    "Use Escalated admin case to show denser multi-deadline handling.",
+    "Use Housing follow-up or Financial aid review if you want a simpler single-theme example.",
     "Use Immigration update to highlight workflow tagging.",
+    "Use Weak noisy case to show graceful behavior on incomplete input.",
     "End with pasted text or upload mode only if you want a live input example.",
 ]
 
@@ -432,7 +454,7 @@ if show_demo_script and not minimal_view:
             st.write(f"- **{name}**: {preset['description']}")
 
 st.subheader("Quick Demo Launch")
-q1, q2, q3, q4 = st.columns(4)
+q1, q2, q3, q4, q5, q6 = st.columns(6)
 preset_names = list(DEMO_PRESETS.keys())
 quick_clicked = None
 
@@ -444,6 +466,10 @@ if q3.button(preset_names[2], use_container_width=True):
     quick_clicked = preset_names[2]
 if q4.button(preset_names[3], use_container_width=True):
     quick_clicked = preset_names[3]
+if q5.button(preset_names[4], use_container_width=True):
+    quick_clicked = preset_names[4]
+if q6.button(preset_names[5], use_container_width=True):
+    quick_clicked = preset_names[5]
 
 if clear_results:
     st.session_state.results = None
