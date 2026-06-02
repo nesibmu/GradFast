@@ -223,6 +223,59 @@ def render_comparison_column(title: str, result: dict):
         render_compact_findings("Action Items", actions[:3], confidence.get("action_items", {}))
 
 
+def render_comparison_summary(left_name: str, left_result: dict, right_name: str, right_result: dict):
+    left_extracted = left_result["extracted"]
+    right_extracted = right_result["extracted"]
+    left_plan = left_result["plan"]
+    right_plan = right_result["plan"]
+
+    left_deadlines = len(left_extracted.get("deadlines", []))
+    right_deadlines = len(right_extracted.get("deadlines", []))
+    left_documents = len(left_extracted.get("requested_documents", []))
+    right_documents = len(right_extracted.get("requested_documents", []))
+    left_tasks = len(left_plan.tasks)
+    right_tasks = len(right_plan.tasks)
+
+    left_workflows = set(task.workflow_type for task in left_plan.tasks)
+    right_workflows = set(task.workflow_type for task in right_plan.tasks)
+
+    st.markdown("### Comparison Summary")
+
+    def compare_line(label, left_val, right_val):
+        if left_val > right_val:
+            return f"- **{left_name}** has more {label}: {left_val} vs {right_val}"
+        if right_val > left_val:
+            return f"- **{right_name}** has more {label}: {right_val} vs {left_val}"
+        return f"- Both cases have the same number of {label}: {left_val}"
+
+    lines = [
+        compare_line("deadlines", left_deadlines, right_deadlines),
+        compare_line("requested documents", left_documents, right_documents),
+        compare_line("planned tasks", left_tasks, right_tasks),
+    ]
+
+    left_only = sorted(left_workflows - right_workflows)
+    right_only = sorted(right_workflows - left_workflows)
+
+    if left_only:
+        lines.append(f"- **{left_name}** uniquely includes workflows: {', '.join(left_only)}")
+    if right_only:
+        lines.append(f"- **{right_name}** uniquely includes workflows: {', '.join(right_only)}")
+    if not left_only and not right_only:
+        lines.append("- Both cases cover the same workflow categories.")
+
+    st.markdown(
+        """
+<div style="border:1px solid #dbeafe;border-radius:14px;padding:14px 16px;background:#eff6ff;margin-bottom:14px;">
+"""
+        + "<br>".join(lines) +
+        """
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
 def assess_input_quality(source_text: str, extracted: dict, plan) -> str:
     signal_count = (
         len(extracted.get("deadlines", []))
@@ -425,6 +478,7 @@ results = st.session_state.results
 
 if results is not None and isinstance(results, dict) and results.get("comparison"):
     st.subheader("Preset Comparison")
+    render_comparison_summary(results["left_name"], results["left"], results["right_name"], results["right"])
     left_col, right_col = st.columns(2)
     with left_col:
         render_comparison_column(results["left_name"], results["left"])
