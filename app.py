@@ -74,7 +74,15 @@ def run_pipeline_from_text(text: str):
     checklist = generate_action_checklist(plan)
     baseline_draft = draft_response_with_mode(plan, enhanced=False)
     enhanced_draft = draft_response_with_mode(plan, enhanced=True)
-    return extracted, plan, summary, checklist, baseline_draft, enhanced_draft
+    return {
+        "source_text": text,
+        "extracted": extracted,
+        "plan": plan,
+        "summary": summary,
+        "checklist": checklist,
+        "baseline_draft": baseline_draft,
+        "enhanced_draft": enhanced_draft,
+    }
 
 
 def priority_color(priority: str) -> str:
@@ -198,6 +206,9 @@ div[data-testid="stMetric"] {
     unsafe_allow_html=True,
 )
 
+if "results" not in st.session_state:
+    st.session_state.results = None
+
 sample_files = sorted([p.name for p in SAMPLES_DIR.glob("*.txt")])
 
 with st.sidebar:
@@ -230,6 +241,7 @@ with st.sidebar:
         uploaded_file = st.file_uploader("Upload a .txt file", type=["txt"])
 
     run_pipeline = st.button("Run pipeline", use_container_width=True)
+    clear_results = st.button("Clear current results", use_container_width=True)
 
 hero_left, hero_right = st.columns([1.35, 0.9])
 
@@ -241,7 +253,7 @@ with hero_left:
             """
 A local demo tool for turning messy administrative requests into:
 - extracted requirements
-- prioritized task planning
+- prioritized tasks
 - usable response drafts
 """
         )
@@ -273,6 +285,26 @@ with hero_right:
 
 st.divider()
 
+st.subheader("Quick Demo Launch")
+q1, q2, q3, q4 = st.columns(4)
+preset_names = list(DEMO_PRESETS.keys())
+quick_clicked = None
+
+if q1.button(preset_names[0], use_container_width=True):
+    quick_clicked = preset_names[0]
+if q2.button(preset_names[1], use_container_width=True):
+    quick_clicked = preset_names[1]
+if q3.button(preset_names[2], use_container_width=True):
+    quick_clicked = preset_names[2]
+if q4.button(preset_names[3], use_container_width=True):
+    quick_clicked = preset_names[3]
+
+if clear_results:
+    st.session_state.results = None
+
+if quick_clicked is not None:
+    st.session_state.results = run_pipeline_from_text(DEMO_PRESETS[quick_clicked]["text"])
+
 if run_pipeline:
     source_text = ""
 
@@ -290,106 +322,117 @@ if run_pipeline:
     if not source_text:
         st.warning("Please choose a preset, enter text, or upload a file before running the pipeline.")
     else:
-        extracted, plan, summary, checklist, baseline_draft, enhanced_draft = run_pipeline_from_text(source_text)
+        st.session_state.results = run_pipeline_from_text(source_text)
 
-        deadlines = extracted.get("deadlines", [])
-        documents = extracted.get("requested_documents", [])
-        actions = extracted.get("action_items", [])
-        evidence = extracted.get("evidence", {})
-        confidence = extracted.get("confidence", {})
+results = st.session_state.results
 
-        urgent_count = len([task for task in plan.tasks if task.status == "urgent"])
-        ready_count = len([task for task in plan.tasks if task.status == "ready"])
-        blocked_count = len([task for task in plan.tasks if task.status == "blocked"])
-        workflow_count = len(set(task.workflow_type for task in plan.tasks))
+if results is not None:
+    source_text = results["source_text"]
+    extracted = results["extracted"]
+    plan = results["plan"]
+    summary = results["summary"]
+    checklist = results["checklist"]
+    baseline_draft = results["baseline_draft"]
+    enhanced_draft = results["enhanced_draft"]
 
-        st.subheader("Overview")
-        m1, m2, m3, m4, m5 = st.columns(5)
-        m1.metric("Deadlines", len(deadlines))
-        m2.metric("Documents", len(documents))
-        m3.metric("Actions", len(actions))
-        m4.metric("Urgent / Ready / Blocked", f"{urgent_count} / {ready_count} / {blocked_count}")
-        m5.metric("Workflows", workflow_count)
+    deadlines = extracted.get("deadlines", [])
+    documents = extracted.get("requested_documents", [])
+    actions = extracted.get("action_items", [])
+    evidence = extracted.get("evidence", {})
+    confidence = extracted.get("confidence", {})
 
+    urgent_count = len([task for task in plan.tasks if task.status == "urgent"])
+    ready_count = len([task for task in plan.tasks if task.status == "ready"])
+    blocked_count = len([task for task in plan.tasks if task.status == "blocked"])
+    workflow_count = len(set(task.workflow_type for task in plan.tasks))
+
+    st.subheader("Overview")
+    m1, m2, m3, m4, m5 = st.columns(5)
+    m1.metric("Deadlines", len(deadlines))
+    m2.metric("Documents", len(documents))
+    m3.metric("Actions", len(actions))
+    m4.metric("Urgent / Ready / Blocked", f"{urgent_count} / {ready_count} / {blocked_count}")
+    m5.metric("Workflows", workflow_count)
+
+    st.divider()
+
+    left, right = st.columns([1.15, 0.85])
+    with left:
+        st.subheader("Source Text")
+        st.text_area("Input", source_text, height=260)
+    with right:
+        st.subheader("Operational Summary")
+        st.text_area("Summary", summary, height=260)
+
+    st.divider()
+
+    st.subheader("Extraction Dashboard")
+
+    d1, d2, d3 = st.columns(3)
+    with d1:
+        render_compact_findings("Deadlines", deadlines, confidence.get("deadlines", {}))
+    with d2:
+        render_compact_findings("Requested Documents", documents, confidence.get("requested_documents", {}))
+    with d3:
+        render_compact_findings("Action Items", actions, confidence.get("action_items", {}))
+
+    if not presenter_mode:
+        st.markdown("#### Evidence by Category")
+        e1, e2, e3 = st.columns(3)
+        with e1:
+            render_evidence_panel("Deadline Evidence", deadlines, evidence.get("deadlines", {}))
+        with e2:
+            render_evidence_panel("Document Evidence", documents, evidence.get("requested_documents", {}))
+        with e3:
+            render_evidence_panel("Action Evidence", actions, evidence.get("action_items", {}))
+
+    st.divider()
+
+    st.subheader("Task Plan")
+
+    if presenter_mode:
+        filtered_tasks = plan.tasks
+    else:
+        workflow_options = ["all"] + sorted({task.workflow_type for task in plan.tasks})
+        priority_options = ["all", "high", "medium", "low"]
+        status_options = ["all", "urgent", "ready", "blocked"]
+
+        f1, f2, f3 = st.columns(3)
+        with f1:
+            selected_workflow = st.selectbox("Filter by workflow", workflow_options)
+        with f2:
+            selected_priority = st.selectbox("Filter by priority", priority_options)
+        with f3:
+            selected_status = st.selectbox("Filter by status", status_options)
+
+        filtered_tasks = []
+        for task in plan.tasks:
+            workflow_ok = selected_workflow == "all" or task.workflow_type == selected_workflow
+            priority_ok = selected_priority == "all" or task.priority == selected_priority
+            status_ok = selected_status == "all" or task.status == selected_status
+            if workflow_ok and priority_ok and status_ok:
+                filtered_tasks.append(task)
+
+    if filtered_tasks:
+        for task in filtered_tasks:
+            render_task_card(task)
+    else:
+        st.caption("No tasks match the selected filters.")
+
+    if not presenter_mode:
         st.divider()
-
-        left, right = st.columns([1.15, 0.85])
-        with left:
-            st.subheader("Source Text")
-            st.text_area("Input", source_text, height=260)
-        with right:
-            st.subheader("Operational Summary")
-            st.text_area("Summary", summary, height=260)
-
-        st.divider()
-
-        st.subheader("Extraction Dashboard")
-
-        d1, d2, d3 = st.columns(3)
-        with d1:
-            render_compact_findings("Deadlines", deadlines, confidence.get("deadlines", {}))
-        with d2:
-            render_compact_findings("Requested Documents", documents, confidence.get("requested_documents", {}))
-        with d3:
-            render_compact_findings("Action Items", actions, confidence.get("action_items", {}))
-
-        if not presenter_mode:
-            st.markdown("#### Evidence by Category")
-            e1, e2, e3 = st.columns(3)
-            with e1:
-                render_evidence_panel("Deadline Evidence", deadlines, evidence.get("deadlines", {}))
-            with e2:
-                render_evidence_panel("Document Evidence", documents, evidence.get("requested_documents", {}))
-            with e3:
-                render_evidence_panel("Action Evidence", actions, evidence.get("action_items", {}))
-
-        st.divider()
-
-        st.subheader("Task Plan")
-
-        if presenter_mode:
-            filtered_tasks = plan.tasks
-        else:
-            workflow_options = ["all"] + sorted({task.workflow_type for task in plan.tasks})
-            priority_options = ["all", "high", "medium", "low"]
-            status_options = ["all", "urgent", "ready", "blocked"]
-
-            f1, f2, f3 = st.columns(3)
-            with f1:
-                selected_workflow = st.selectbox("Filter by workflow", workflow_options)
-            with f2:
-                selected_priority = st.selectbox("Filter by priority", priority_options)
-            with f3:
-                selected_status = st.selectbox("Filter by status", status_options)
-
-            filtered_tasks = []
-            for task in plan.tasks:
-                workflow_ok = selected_workflow == "all" or task.workflow_type == selected_workflow
-                priority_ok = selected_priority == "all" or task.priority == selected_priority
-                status_ok = selected_status == "all" or task.status == selected_status
-                if workflow_ok and priority_ok and status_ok:
-                    filtered_tasks.append(task)
-
-        if filtered_tasks:
-            for task in filtered_tasks:
-                render_task_card(task)
-        else:
-            st.caption("No tasks match the selected filters.")
-
-        if not presenter_mode:
-            st.divider()
-            with st.expander("Trace View", expanded=False):
-                st.markdown("### Source to Output Mapping")
-                for category in ["deadlines", "requested_documents", "action_items"]:
-                    items = extracted.get(category, [])
-                    if items:
-                        st.markdown(f"**{category.replace('_', ' ').title()}**")
-                        for item in items:
-                            matched_tasks = [task.task for task in plan.tasks if item.lower() in task.task.lower()]
-                            snippet = evidence.get(category, {}).get(item, "No snippet found.")
-                            conf = confidence.get(category, {}).get(item, 0.0)
-                            st.markdown(
-                                f"""
+        with st.expander("Trace View", expanded=False):
+            st.markdown("### Source to Output Mapping")
+            for category in ["deadlines", "requested_documents", "action_items"]:
+                items = extracted.get(category, [])
+                if items:
+                    st.markdown(f"**{category.replace('_', ' ').title()}**")
+                    for item in items:
+                        matched_tasks = [task.task for task in plan.tasks if item.lower() in task.task.lower()]
+                        snippet = evidence.get(category, {}).get(item, "No snippet found.")
+                        conf = confidence.get(category, {}).get(item, 0.0)
+                        st.markdown(
+                            f"""
 <div style="border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin-bottom:10px;background:#fafafa;">
   <div><strong>Item:</strong> {item}</div>
   <div style="margin-top:6px;"><strong>Confidence:</strong> {conf:.2f}</div>
@@ -397,79 +440,79 @@ if run_pipeline:
   <div style="margin-top:6px;"><strong>Mapped tasks:</strong> {matched_tasks if matched_tasks else 'None'}</div>
 </div>
 """,
-                                unsafe_allow_html=True,
-                            )
+                            unsafe_allow_html=True,
+                        )
 
-        st.divider()
-        st.subheader("Response Workspace")
+    st.divider()
+    st.subheader("Response Workspace")
 
-        if presenter_mode:
-            tab1, tab2 = st.tabs(["Enhanced Draft", "Checklist"])
-            with tab1:
-                enhanced_editable = st.text_area("Enhanced Draft", enhanced_draft, height=320)
-                st.download_button(
-                    label="Download enhanced draft",
-                    data=enhanced_editable,
-                    file_name="visaflow_enhanced_draft.txt",
-                    mime="text/plain",
-                    use_container_width=True,
-                    key="download_enhanced_presenter",
-                )
-            with tab2:
-                checklist_text = st.text_area("Action Checklist", checklist, height=320)
-                st.download_button(
-                    label="Download checklist",
-                    data=checklist_text,
-                    file_name="visaflow_checklist.txt",
-                    mime="text/plain",
-                    use_container_width=True,
-                    key="download_checklist_presenter",
-                )
-        else:
-            tab1, tab2, tab3, tab4 = st.tabs(["Summary", "Baseline Draft", "Enhanced Draft", "Checklist"])
+    if presenter_mode:
+        tab1, tab2 = st.tabs(["Enhanced Draft", "Checklist"])
+        with tab1:
+            enhanced_editable = st.text_area("Enhanced Draft", enhanced_draft, height=320)
+            st.download_button(
+                label="Download enhanced draft",
+                data=enhanced_editable,
+                file_name="visaflow_enhanced_draft.txt",
+                mime="text/plain",
+                use_container_width=True,
+                key="download_enhanced_presenter",
+            )
+        with tab2:
+            checklist_text = st.text_area("Action Checklist", checklist, height=320)
+            st.download_button(
+                label="Download checklist",
+                data=checklist_text,
+                file_name="visaflow_checklist.txt",
+                mime="text/plain",
+                use_container_width=True,
+                key="download_checklist_presenter",
+            )
+    else:
+        tab1, tab2, tab3, tab4 = st.tabs(["Summary", "Baseline Draft", "Enhanced Draft", "Checklist"])
 
-            with tab1:
-                st.text_area("Summary view", summary, height=280)
-                st.download_button(
-                    label="Download summary",
-                    data=summary,
-                    file_name="visaflow_summary.txt",
-                    mime="text/plain",
-                    use_container_width=True,
-                    key="download_summary",
-                )
+        with tab1:
+            st.text_area("Summary view", summary, height=280)
+            st.download_button(
+                label="Download summary",
+                data=summary,
+                file_name="visaflow_summary.txt",
+                mime="text/plain",
+                use_container_width=True,
+                key="download_summary",
+            )
 
-            with tab2:
-                baseline_editable = st.text_area("Baseline Draft", baseline_draft, height=320)
-                st.download_button(
-                    label="Download baseline draft",
-                    data=baseline_editable,
-                    file_name="visaflow_baseline_draft.txt",
-                    mime="text/plain",
-                    use_container_width=True,
-                    key="download_baseline",
-                )
+        with tab2:
+            baseline_editable = st.text_area("Baseline Draft", baseline_draft, height=320)
+            st.download_button(
+                label="Download baseline draft",
+                data=baseline_editable,
+                file_name="visaflow_baseline_draft.txt",
+                mime="text/plain",
+                use_container_width=True,
+                key="download_baseline",
+            )
 
-            with tab3:
-                enhanced_editable = st.text_area("Enhanced Draft", enhanced_draft, height=320)
-                st.download_button(
-                    label="Download enhanced draft",
-                    data=enhanced_editable,
-                    file_name="visaflow_enhanced_draft.txt",
-                    mime="text/plain",
-                    use_container_width=True,
-                    key="download_enhanced",
-                )
+        with tab3:
+            enhanced_editable = st.text_area("Enhanced Draft", enhanced_draft, height=320)
+            st.download_button(
+                label="Download enhanced draft",
+                data=enhanced_editable,
+                file_name="visaflow_enhanced_draft.txt",
+                mime="text/plain",
+                use_container_width=True,
+                key="download_enhanced",
+            )
 
-            with tab4:
-                checklist_text = st.text_area("Action Checklist", checklist, height=320)
-                st.download_button(
-                    label="Download checklist",
-                    data=checklist_text,
-                    file_name="visaflow_checklist.txt",
-                    mime="text/plain",
-                    use_container_width=True,
-                    key="download_checklist",
-                )
+        with tab4:
+            checklist_text = st.text_area("Action Checklist", checklist, height=320)
+            st.download_button(
+                label="Download checklist",
+                data=checklist_text,
+                file_name="visaflow_checklist.txt",
+                mime="text/plain",
+                use_container_width=True,
+                key="download_checklist",
+            )
 else:
-    st.info("Choose a preset, sample file, pasted text, or uploaded file, then click Run pipeline.")
+    st.info("Choose a preset, sample file, pasted text, or uploaded file, then click Run pipeline, or use a Quick Demo Launch button.")
