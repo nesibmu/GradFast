@@ -1,28 +1,41 @@
 # VisaFlow
 
-VisaFlow is an AI operations assistant for international-student bureaucracy. It turns messy administrative emails and checklists into structured next steps: extracted deadlines, requested documents, action items, prioritized tasks, and ready-to-use response artifacts.
+<div align="center">
 
-## Project track
+**AI operations agent for international-student bureaucracy**
 
-Automation / Agent Systems
+*Turn messy administrative emails into structured deadlines, document requests, task plans, and sendable outputs.*
 
-## Problem
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![Streamlit](https://img.shields.io/badge/UI-Streamlit-red)
+![Track](https://img.shields.io/badge/CS153-Automation%20%2F%20Agent%20Systems-purple)
+![Status](https://img.shields.io/badge/Status-Local%20Demo-green)
 
-International students often deal with fragmented administrative workflows across housing, immigration, and financial aid. Important details are spread across emails, checklists, portals, and follow-up reminders. The cost of missing one deadline or document can be high, but the messages themselves are often repetitive, vague, and hard to operationalize quickly.
+</div>
 
-VisaFlow is built to reduce that friction. Instead of just reading the message, the system converts it into a workflow someone can actually act on.
+---
 
-## Core idea
+## Overview
 
-The main idea is simple: treat administrative communication as operational input.
+International students regularly receive high-stakes emails from housing offices, financial aid, registrars, and immigration offices. The problem is usually not just reading the message. The real bottleneck is turning a long, inconsistent administrative email into an actionable workflow:
 
-Given an email or text document, VisaFlow:
-1. extracts deadlines, requested documents, and action items
-2. attaches confidence scores and supporting evidence
-3. builds a task plan with urgency, dependencies, and workflow tags
-4. generates output artifacts that are useful in practice
+- What exactly is being requested?
+- What documents are needed?
+- What is urgent?
+- What can be done now versus later?
+- What reply can be sent back quickly?
 
-The project focuses on making the result understandable, actionable, and demo-ready rather than building a deployed production system.
+VisaFlow is a local prototype that converts those messages into structured operational support. Instead of leaving the user with a wall of text, it extracts deadlines, requested documents, and action items, maps them back to source evidence, builds a prioritized task plan, and generates reusable output artifacts such as a short summary, task digest, email-ready reply, checklist, and operations handoff.
+
+---
+
+## Why I built this
+
+Administrative workflows are one of the most frustrating forms of modern bureaucracy because they are repetitive, time-sensitive, and easy to mis-handle. For international students, these messages often affect housing, funding, enrollment, travel status, and immigration compliance. A missed line in one email can create outsized downstream costs.
+
+I built VisaFlow to explore whether a small, explainable AI workflow layer could reduce that cognitive overhead. My goal was not to build a generic chatbot. It was to build a focused operations agent that helps a user convert an administrative message into a concrete action plan.
+
+---
 
 ## What the product does
 
@@ -31,124 +44,175 @@ VisaFlow currently supports:
 - deadline extraction
 - requested document extraction
 - action item extraction
-- evidence mapping
+- evidence snippet selection
 - confidence scoring
 - workflow tagging
-- prioritized task planning
 - blocked task explanations
 - urgency ranking
-- weak-input fallback handling
-- presenter-friendly output generation
+- exportable workflow artifacts
 
-## Main outputs
+### Artifact suite
 
-For a given input, VisaFlow can produce:
+| Artifact | Purpose |
+|---|---|
+| Short Summary | Fast screenshot-friendly view of the case |
+| Task Digest | Compact task-only operational handoff |
+| Full Summary | Richer explanation of the current workflow |
+| Email-Ready Reply | Cleaner response draft that is close to sendable |
+| Baseline Draft | Simpler draft for comparison |
+| Enhanced Draft | More detailed response artifact |
+| Checklist | Execution-oriented step list |
+| Operations Handoff | Full structured handoff artifact |
 
-- Short Summary
-- Task Digest
-- Full Summary
-- Email-Ready Reply
-- Baseline Draft
-- Enhanced Draft
-- Checklist
-- Operations Handoff
+---
 
-## Demo modes
+## System architecture
 
-The app includes:
+```mermaid
+flowchart LR
+    A[Administrative Email or Text] --> B[Ingestion + Normalization]
+    B --> C[Extraction Layer]
+    C --> C1[Deadlines]
+    C --> C2[Requested Documents]
+    C --> C3[Action Items]
+    C --> C4[Evidence + Confidence]
+    C1 --> D[Planning Layer]
+    C2 --> D
+    C3 --> D
+    C4 --> D
+    D --> D1[Workflow Tagging]
+    D --> D2[Dependency Reasoning]
+    D --> D3[Urgency Ranking]
+    D --> D4[Blocked vs Ready vs Urgent]
+    D1 --> E[Output Layer]
+    D2 --> E
+    D3 --> E
+    D4 --> E
+    E --> F1[Short Summary]
+    E --> F2[Task Digest]
+    E --> F3[Email-Ready Reply]
+    E --> F4[Checklist]
+    E --> F5[Operations Handoff]
+    E --> F6[Interactive Streamlit UI]
+```
 
-- Presenter Mode
-- Minimal View
-- Comparison Mode
-- Quick Launch Presets
-- Guided Demo Support
-- Final Demo Checklist
-- Best Demo Comparison Guidance
+---
+
+## End-to-end workflow
+
+```mermaid
+flowchart TD
+    A[Load preset, paste text, or upload file] --> B[Run pipeline]
+    B --> C[Extract deadlines, documents, actions]
+    C --> D[Attach evidence snippets]
+    D --> E[Score confidence]
+    E --> F[Build task plan]
+    F --> G[Rank urgency]
+    G --> H[Mark tasks as urgent, ready, or blocked]
+    H --> I[Generate outputs]
+    I --> J[Presenter view / Minimal view / Comparison mode]
+```
+
+---
+
+## Product views and demo modes
+
+VisaFlow includes several presentation modes so the same system can be shown at different levels of depth.
+
+| Mode | What it is for |
+|---|---|
+| Presenter Mode | Clean demo flow with the strongest outputs surfaced first |
+| Minimal View | Presentation-friendly layout with less visual clutter |
+| Comparison Mode | Side-by-side comparison of a strong case and a weak/noisy case |
+| Quick Launch Presets | One-click demo presets for fast walkthroughs |
+| Guided Demo Panels | Demo checklist, preset notes, and comparison guidance |
+
+---
 
 ## Main presets
 
-- **Mixed admin case** — strongest default demo
-- **Escalated admin case** — denser multi-deadline case
-- **Housing follow-up** — simpler walkthrough case
-- **Financial aid review** — sentence-based document extraction case
-- **Immigration update** — workflow-tagging case
-- **Weak noisy case** — robustness and fallback case
+| Preset | What it demonstrates |
+|---|---|
+| Mixed admin case | Strongest overall demo, showing cross-workflow extraction and planning |
+| Escalated admin case | Denser case with multiple deadlines and heavier document load |
+| Housing follow-up | Cleaner single-theme walkthrough |
+| Financial aid review | Sentence-based extraction from natural email text |
+| Immigration update | Immigration-specific workflow tagging |
+| Weak noisy case | Graceful fallback handling on incomplete input |
 
-## How it works
+---
 
-### 1. Ingestion
-VisaFlow loads sample files, pasted text, or uploaded `.txt` inputs and normalizes the text before processing.
+## Demo comparison view
 
-### 2. Extraction
-The system identifies:
-- deadlines
-- requested documents
-- action items
+```mermaid
+flowchart LR
+    A[Mixed admin case] --> A1[More extracted structure]
+    A --> A2[Stronger workflow plan]
+    A --> A3[Higher confidence]
 
-It also tries to normalize repeated document variants such as different ways of referring to a passport copy or I-20.
+    B[Weak noisy case] --> B1[Lower signal]
+    B --> B2[Fallback summaries]
+    B --> B3[Explicit uncertainty]
+```
 
-### 3. Evidence and confidence
-Each extracted item is paired with a supporting snippet and a confidence score so the result is easier to inspect.
+This comparison is useful because it shows both capability and restraint: the system does more when the input is rich, and it becomes more cautious when the input is vague.
 
-### 4. Planning
-The extracted items are converted into a structured task plan. Tasks can be tagged as:
-- urgent
-- ready
-- blocked
-
-The planning layer also tracks dependencies, adds blocked-task explanations, and applies a lightweight urgency score for ordering.
-
-### 5. Output generation
-The final stage turns the plan into different artifacts depending on use case:
-- compact updates
-- operational handoffs
-- email-style replies
-- longer summaries
-
-## Why this is useful
-
-VisaFlow is useful in cases where someone needs to move from “I got an email” to “I know exactly what I need to do next.”
-
-Possible use cases:
-- students handling time-sensitive university communication
-- advisors or support staff triaging incoming administrative requests
-- operations workflows built on top of email-heavy bureaucratic processes
-- future agents that coordinate reminders, follow-ups, and document collection
+---
 
 ## Evaluation and evidence
 
-This project was evaluated mainly through functional iteration and workflow behavior rather than large-scale benchmark results.
+This project is a product prototype, so evaluation here focuses on whether the system is understandable, functional, and honest about its limits.
 
-Evidence of progress includes:
-- a public GitHub repository with commit history
-- a working local Streamlit application
-- multiple structured demo presets
-- comparison between strong structured cases and weak/noisy cases
-- explicit fallback handling for incomplete input
-- iterative improvements to extraction, planning, and artifact quality
+### What I used as evidence
 
-The current version is strongest as a local demo prototype and workflow artifact generator.
+- lightweight test coverage across extraction, workflow tagging, weak-input handling, task digest integration, export consistency, and README alignment
+- comparison between stronger and weaker preset cases
+- explicit fallback behavior for incomplete or noisy input
+- evidence panels that connect extracted items back to source snippets
+- visible commit history showing iteration over time
 
-## Limitations
+### What success looks like in this prototype
 
-Current limitations include:
-- rule-based extraction still misses some edge cases
-- confidence scores are heuristic rather than learned
-- support is focused on text inputs rather than PDFs, screenshots, or full portal integration
-- no live deployment or authenticated university data integration
-- evaluation is still lightweight and mostly demo-driven
+- the app consistently turns a messy admin message into a clearer plan
+- extracted requirements are easier to scan than the raw message
+- outputs are useful in different contexts: quick update, execution, or reply drafting
+- the system handles weak inputs without pretending to know more than it does
 
-## What I would add next
+### Known limitations
 
-If I continued the project, I would prioritize:
-- better multi-document and multi-message context handling
-- stronger retrieval over full email threads
-- richer document and portal integration
-- learned or hybrid extraction models
-- user testing with real student workflows
-- automatic reminder and follow-up actions
+- extraction is still mostly pattern- and rule-based rather than model-based
+- the current version is optimized for local demo use, not deployment
+- there is no live email integration, authentication layer, or production data pipeline
+- confidence is heuristic, not calibrated with a labeled benchmark set
+- evaluation is based on targeted cases and tests, not a large external dataset
 
-## Run locally
+---
+
+## Example use cases
+
+- **Housing:** identify contract requests, agreements, portal instructions, and deadlines
+- **Financial aid:** identify bank statements, statements of support, and reply obligations
+- **Immigration:** identify passport and I-20 requests, plus confirmation steps
+- **Mixed administrative cases:** unify multiple requirements into one plan instead of leaving the user to manually separate them
+
+---
+
+## Why this is an AI operations project
+
+This project fits the **Automation / Agent Systems** track because the goal is not just classification or summarization. The goal is to turn unstructured operational input into a sequence of concrete next steps and reusable artifacts.
+
+VisaFlow acts like a narrow operations layer:
+
+1. read the message
+2. extract what matters
+3. reason about urgency and dependencies
+4. generate outputs that help the user execute
+
+---
+
+## Reproducibility
+
+### Run locally
 
 Install dependencies:
 
@@ -162,44 +226,68 @@ Run the app:
 python -m streamlit run app.py
 ```
 
-## Repository structure
+### Repository structure
 
 - `app.py` — main Streamlit app
 - `visaflow/extraction/` — extraction, normalization, evidence selection
 - `visaflow/planning/` — workflow planning, dependencies, urgency ordering
-- `visaflow/drafting/` — summaries, drafts, task digest, checklist, handoff outputs
+- `visaflow/drafting/` — summaries, task digest, drafts, checklist, handoff outputs
 - `visaflow/ingestion/` — input loading
-- `data/samples/` — sample text inputs
-- `tests/` — lightweight validation tests
+- `data/samples/` — demo sample inputs
+- `tests/` — lightweight tests used during iteration
 
-## AI usage and disclosure
+---
 
-AI tools were used in the development of this project, and this README is intended to disclose that clearly.
+## Development process
 
-AI assistance was used for:
-- brainstorming implementation directions
-- drafting and revising parts of the UI copy
-- debugging specific code issues
-- refactoring and cleanup suggestions
-- generating and refining some tests
-- helping structure documentation and presentation materials
+A major part of the project was iterative refinement rather than one-shot implementation. The system evolved from a basic extraction pipeline into a more polished product with:
 
-I still made the project-level decisions myself, including:
-- choosing the problem and project direction
-- deciding the product scope
-- selecting which features to keep or cut
-- integrating and editing the code in the repository
-- choosing the presets, outputs, and demo flow
-- reviewing and testing the final behavior locally
+- confidence and evidence views
+- richer planning logic
+- multiple export artifacts
+- presenter-oriented demo support
+- better weak-input handling
+- improved comparison flows
 
-In other words, AI was used as a development assistant, not as a substitute for the underlying project work or final judgment.
+That iteration is reflected in the public commit history and the growing set of tests and outputs.
 
-## Final state
+---
 
-This repository is the final local demo version of VisaFlow for CS 153. It is optimized for:
+## AI usage disclosure
+
+AI tools were used during development, and this project is disclosed accordingly.
+
+### How AI tools were used
+
+- brainstorming implementation options and UI ideas
+- accelerating code scaffolding for parts of the Streamlit interface
+- debugging specific integration issues and patching errors
+- suggesting test cases and cleanup passes
+- helping rewrite documentation and artifact copy more clearly
+
+### What remained my responsibility
+
+- choosing the project direction and scope
+- deciding the product framing and target problem
+- selecting which features stayed or were removed
+- iterating on the demo flow and preset strategy
+- reviewing, adapting, and integrating the code into the actual repository
+- making final decisions about outputs, limitations, and how the project should be presented
+
+I did **not** treat AI output as automatically correct. The project required repeated integration, debugging, refinement, and manual judgment to get the current prototype into a coherent final state.
+
+---
+
+## Final project state
+
+This repository is the frozen local demo version of VisaFlow. It is designed to show how administrative communication can be converted into structured operational support with clearer extraction, more useful workflow planning, and presentation-ready artifacts.
+
+The current version is optimized for:
+
 - local demonstration
 - preset-driven walkthroughs
 - comparison of strong and weak cases
 - exportable workflow artifacts
+- readable documentation for reproducibility
 
 It is not intended to be a deployed production system.
