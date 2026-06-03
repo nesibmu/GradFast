@@ -7,7 +7,8 @@ from visaflow.planning.planner import build_task_plan
 import visaflow.drafting.drafter as drafter
 
 
-DEFAULT_PRESET = "Mixed admin case"
+APP_TITLE = "VisaFlow"
+APP_SUBTITLE = "AI-assisted workflow organizer for administrative messages"
 
 DEMO_PRESETS = {
     "Mixed admin case": {
@@ -34,7 +35,7 @@ Please upload all materials through the student portal by June 10, 2026. You sho
 
 Best,
 Student Services and Financial Support""",
-        "note": "Best dense case. Shows multiple deadlines and stronger urgency.",
+        "note": "Dense case. Shows multiple deadlines and stronger urgency.",
     },
     "Housing follow-up": {
         "text": """Subject: Additional documents needed for spring housing approval
@@ -73,7 +74,7 @@ Please confirm once the materials have been uploaded.
 
 Best,
 International Student Office""",
-        "note": "Good for showing immigration-specific workflow tagging.",
+        "note": "Good for immigration workflow tagging.",
     },
     "Weak noisy case": {
         "text": """Subject: quick follow up
@@ -100,56 +101,15 @@ def run_pipeline_from_text(text: str):
     extracted = extract_information(text)
     plan = build_task_plan(extracted)
 
-    summary = safe_call(
-        "generate_next_step_summary",
-        plan,
-        fallback="No summary available.",
-    )
-    short_summary = safe_call(
-        "generate_short_summary",
-        plan,
-        extracted,
-        fallback="Short summary unavailable.",
-    )
-    recommended_next_action = safe_call(
-        "generate_recommended_next_action",
-        plan,
-        fallback="No recommended next action available.",
-    )
-    checklist = safe_call(
-        "generate_action_checklist",
-        plan,
-        fallback="Checklist unavailable.",
-    )
-    ops_handoff = safe_call(
-        "generate_ops_handoff",
-        plan,
-        extracted,
-        fallback="Operations handoff unavailable.",
-    )
-    email_ready_reply = safe_call(
-        "generate_email_ready_reply",
-        plan,
-        fallback="Email-ready reply unavailable.",
-    )
-    task_digest = safe_call(
-        "generate_task_digest",
-        plan,
-        extracted,
-        fallback="Task digest unavailable.",
-    )
-    baseline_draft = safe_call(
-        "draft_response_with_mode",
-        plan,
-        False,
-        fallback="Baseline draft unavailable.",
-    )
-    enhanced_draft = safe_call(
-        "draft_response_with_mode",
-        plan,
-        True,
-        fallback="Enhanced draft unavailable.",
-    )
+    summary = safe_call("generate_next_step_summary", plan, fallback="No summary available.")
+    short_summary = safe_call("generate_short_summary", plan, extracted, fallback="Short summary unavailable.")
+    recommended_next_action = safe_call("generate_recommended_next_action", plan, fallback="No recommended next action available.")
+    checklist = safe_call("generate_action_checklist", plan, fallback="Checklist unavailable.")
+    ops_handoff = safe_call("generate_ops_handoff", plan, extracted, fallback="Operations handoff unavailable.")
+    email_ready_reply = safe_call("generate_email_ready_reply", plan, fallback="Email-ready reply unavailable.")
+    task_digest = safe_call("generate_task_digest", plan, extracted, fallback="Task digest unavailable.")
+    baseline_draft = safe_call("draft_response_with_mode", plan, False, fallback="Baseline draft unavailable.")
+    enhanced_draft = safe_call("draft_response_with_mode", plan, True, fallback="Enhanced draft unavailable.")
 
     return {
         "source_text": text,
@@ -272,124 +232,7 @@ def render_list_section(title: str, items, confidence_map=None):
         )
 
 
-st.set_page_config(page_title="VisaFlow", layout="wide")
-
-st.markdown(
-    """
-<style>
-.block-container {
-    max-width: 1250px;
-    padding-top: 1.2rem;
-    padding-bottom: 3rem;
-}
-div[data-testid="stMetric"] {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    padding: 16px;
-    border-radius: 16px;
-}
-div[data-testid="stMetric"] label {
-    font-size: 16px !important;
-}
-div[data-testid="stMetricValue"] {
-    font-size: 28px !important;
-}
-textarea, input, select {
-    font-size: 18px !important;
-}
-</style>
-""",
-    unsafe_allow_html=True,
-)
-
-if "results" not in st.session_state:
-    st.session_state.results = None
-
-sample_files = sorted([p.name for p in SAMPLES_DIR.glob("*.txt")])
-
-st.title("VisaFlow")
-st.markdown(
-    """
-### AI operations agent for international-student bureaucracy
-
-Use this app in **3 simple steps**:
-
-**Step 1:** Choose how you want to provide input  
-**Step 2:** Click **Run Workflow**  
-**Step 3:** Review the extracted requirements, task plan, and ready-to-use outputs below
-"""
-)
-
-st.divider()
-
-st.markdown("## Step 1 — Choose your input")
-
-input_mode = st.radio(
-    "How do you want to provide input?",
-    ["Demo preset", "Paste text", "Upload file", "Sample file"],
-    horizontal=True,
-)
-
-selected_preset = DEFAULT_PRESET
-pasted_text = ""
-uploaded_file = None
-selected_file = None
-
-if input_mode == "Demo preset":
-    selected_preset = st.selectbox("Choose a preset case", list(DEMO_PRESETS.keys()), index=0)
-    st.info(DEMO_PRESETS[selected_preset]["note"])
-
-elif input_mode == "Paste text":
-    pasted_text = st.text_area(
-        "Paste the full email or message here",
-        height=260,
-        placeholder="Paste the administrative email, request, or message here...",
-    )
-
-elif input_mode == "Upload file":
-    uploaded_file = st.file_uploader("Upload a .txt file", type=["txt"])
-
-elif input_mode == "Sample file":
-    selected_file = st.selectbox("Choose a sample file", sample_files)
-
-st.markdown("## Step 2 — Run the workflow")
-c1, c2 = st.columns([1, 1])
-with c1:
-    run_pipeline = st.button("Run Workflow", use_container_width=True)
-with c2:
-    clear_results = st.button("Clear Results", use_container_width=True)
-
-if clear_results:
-    st.session_state.results = None
-
-if run_pipeline:
-    source_text = ""
-
-    if input_mode == "Demo preset":
-        source_text = DEMO_PRESETS[selected_preset]["text"]
-    elif input_mode == "Paste text":
-        source_text = pasted_text.strip()
-    elif input_mode == "Upload file":
-        if uploaded_file is not None:
-            source_text = uploaded_file.read().decode("utf-8").strip()
-    elif input_mode == "Sample file":
-        if selected_file:
-            document = load_document(SAMPLES_DIR / selected_file)
-            source_text = document.text
-
-    if not source_text:
-        st.warning("Please provide some input before running the workflow.")
-    else:
-        st.session_state.results = run_pipeline_from_text(source_text)
-
-results = st.session_state.results
-
-st.divider()
-st.markdown("## Step 3 — Review the results")
-
-if results is None:
-    st.info("No results yet. Choose an input above and click Run Workflow.")
-else:
+def render_case_results(results, title="Results"):
     extracted = results["extracted"]
     plan = results["plan"]
 
@@ -399,6 +242,8 @@ else:
     confidence = extracted.get("confidence", {})
 
     case_confidence_label, case_confidence_score = compute_case_confidence(extracted, plan)
+
+    st.markdown(f"## {title}")
 
     st.markdown(
         f"""
@@ -426,12 +271,8 @@ else:
     m3.metric("Actions", len(actions))
     m4.metric("Tasks", len(plan.tasks))
 
-    st.divider()
-
     st.markdown("### Original Input")
-    st.text_area("Source text", results["source_text"], height=240)
-
-    st.divider()
+    st.text_area(f"{title} Source Text", results["source_text"], height=220)
 
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -441,16 +282,12 @@ else:
     with c3:
         render_list_section("Action Items", actions, confidence.get("action_items", {}))
 
-    st.divider()
-
     st.markdown("### Task Plan")
     if not plan.tasks:
         st.info("No task plan was generated from this input.")
     else:
         for task in plan.tasks:
             render_task_card(task)
-
-    st.divider()
 
     st.markdown("### Outputs")
     tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
@@ -466,29 +303,246 @@ else:
     )
 
     with tab1:
-        value = st.text_area("Short Summary", results["short_summary"], height=300)
+        value = st.text_area(f"{title} Short Summary", results["short_summary"], height=280)
         st.download_button("Export Short Summary", value, "visaflow_short_summary_export.txt", "text/plain")
 
     with tab2:
-        value = st.text_area("Email Reply", results["email_ready_reply"], height=340)
+        value = st.text_area(f"{title} Email Reply", results["email_ready_reply"], height=320)
         st.download_button("Export Email Reply", value, "visaflow_email_ready_reply_export.txt", "text/plain")
 
     with tab3:
-        value = st.text_area("Task Digest", results["task_digest"], height=340)
+        value = st.text_area(f"{title} Task Digest", results["task_digest"], height=320)
         st.download_button("Export Task Digest", value, "visaflow_task_digest_export.txt", "text/plain")
 
     with tab4:
-        value = st.text_area("Full Summary", results["summary"], height=340)
+        value = st.text_area(f"{title} Full Summary", results["summary"], height=320)
         st.download_button("Export Full Summary", value, "visaflow_summary_export.txt", "text/plain")
 
     with tab5:
-        value = st.text_area("Enhanced Draft", results["enhanced_draft"], height=380)
+        value = st.text_area(f"{title} Enhanced Draft", results["enhanced_draft"], height=360)
         st.download_button("Export Enhanced Draft", value, "visaflow_enhanced_draft_export.txt", "text/plain")
 
     with tab6:
-        value = st.text_area("Checklist", results["checklist"], height=380)
+        value = st.text_area(f"{title} Checklist", results["checklist"], height=360)
         st.download_button("Export Checklist", value, "visaflow_checklist_export.txt", "text/plain")
 
     with tab7:
-        value = st.text_area("Operations Handoff", results["ops_handoff"], height=380)
+        value = st.text_area(f"{title} Operations Handoff", results["ops_handoff"], height=360)
         st.download_button("Export Operations Handoff", value, "visaflow_operations_handoff_export.txt", "text/plain")
+
+
+def get_input_text(prefix: str):
+    sample_files = sorted([p.name for p in SAMPLES_DIR.glob("*.txt")])
+
+    mode = st.radio(
+        f"{prefix} input type",
+        ["Demo preset", "Paste text", "Upload file", "Sample file"],
+        horizontal=True,
+        key=f"{prefix}_mode",
+    )
+
+    if mode == "Demo preset":
+        preset = st.selectbox(
+            f"{prefix} preset",
+            list(DEMO_PRESETS.keys()),
+            index=0,
+            key=f"{prefix}_preset",
+        )
+        st.info(DEMO_PRESETS[preset]["note"])
+        return DEMO_PRESETS[preset]["text"]
+
+    if mode == "Paste text":
+        return st.text_area(
+            f"{prefix} pasted text",
+            height=220,
+            placeholder="Paste the full email or message here...",
+            key=f"{prefix}_paste",
+        )
+
+    if mode == "Upload file":
+        uploaded = st.file_uploader(
+            f"{prefix} upload a .txt file",
+            type=["txt"],
+            key=f"{prefix}_upload",
+        )
+        if uploaded is not None:
+            return uploaded.read().decode("utf-8").strip()
+        return ""
+
+    if mode == "Sample file":
+        selected_file = st.selectbox(
+            f"{prefix} sample file",
+            sample_files,
+            key=f"{prefix}_sample",
+        )
+        if selected_file:
+            document = load_document(SAMPLES_DIR / selected_file)
+            return document.text
+        return ""
+
+    return ""
+
+
+st.set_page_config(page_title=APP_TITLE, layout="wide")
+
+st.markdown(
+    """
+<style>
+.block-container {
+    max-width: 1300px;
+    padding-top: 1.2rem;
+    padding-bottom: 3rem;
+}
+div[data-testid="stMetric"] {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 16px;
+    border-radius: 16px;
+}
+div[data-testid="stMetric"] label {
+    font-size: 16px !important;
+}
+div[data-testid="stMetricValue"] {
+    font-size: 28px !important;
+}
+textarea, input, select, button {
+    font-size: 18px !important;
+}
+p, li, label, div {
+    font-size: 17px;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+if "single_results" not in st.session_state:
+    st.session_state.single_results = None
+if "compare_left_results" not in st.session_state:
+    st.session_state.compare_left_results = None
+if "compare_right_results" not in st.session_state:
+    st.session_state.compare_right_results = None
+
+st.title(APP_TITLE)
+st.markdown(f"### {APP_SUBTITLE}")
+st.markdown(
+    """
+This app helps turn administrative messages into structured workflow support.
+
+Use it in a simple order:
+
+**1. Choose a mode**  
+**2. Provide one or two inputs**  
+**3. Run the workflow**  
+**4. Review the extracted requirements, task plan, and outputs**
+"""
+)
+
+st.divider()
+
+mode = st.radio(
+    "Choose a mode",
+    ["Single Message", "Compare Two Messages"],
+    horizontal=True,
+)
+
+if mode == "Single Message":
+    st.markdown("## Step 1 — Provide one input")
+    source_text = get_input_text("Single")
+
+    st.markdown("## Step 2 — Run")
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        run_single = st.button("Run Single Workflow", use_container_width=True)
+    with c2:
+        clear_single = st.button("Clear Single Results", use_container_width=True)
+
+    if clear_single:
+        st.session_state.single_results = None
+
+    if run_single:
+        if not source_text.strip():
+            st.warning("Please provide some input before running the workflow.")
+        else:
+            st.session_state.single_results = run_pipeline_from_text(source_text.strip())
+
+    st.divider()
+    st.markdown("## Step 3 — Review results")
+
+    if st.session_state.single_results is None:
+        st.info("No results yet. Add an input above and click Run Single Workflow.")
+    else:
+        render_case_results(st.session_state.single_results, "Single Message Results")
+
+else:
+    st.markdown("## Step 1 — Provide two inputs to compare")
+
+    left_col, right_col = st.columns(2)
+    with left_col:
+        st.markdown("### Left Input")
+        left_text = get_input_text("Left")
+    with right_col:
+        st.markdown("### Right Input")
+        right_text = get_input_text("Right")
+
+    st.markdown("## Step 2 — Run")
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        run_compare = st.button("Run Comparison", use_container_width=True)
+    with c2:
+        clear_compare = st.button("Clear Comparison Results", use_container_width=True)
+
+    if clear_compare:
+        st.session_state.compare_left_results = None
+        st.session_state.compare_right_results = None
+
+    if run_compare:
+        if not left_text.strip() or not right_text.strip():
+            st.warning("Please provide both inputs before running the comparison.")
+        else:
+            st.session_state.compare_left_results = run_pipeline_from_text(left_text.strip())
+            st.session_state.compare_right_results = run_pipeline_from_text(right_text.strip())
+
+    st.divider()
+    st.markdown("## Step 3 — Review comparison results")
+
+    if st.session_state.compare_left_results is None or st.session_state.compare_right_results is None:
+        st.info("No comparison results yet. Add two inputs above and click Run Comparison.")
+    else:
+        left_results = st.session_state.compare_left_results
+        right_results = st.session_state.compare_right_results
+
+        left_plan = left_results["plan"]
+        right_plan = right_results["plan"]
+
+        left_extracted = left_results["extracted"]
+        right_extracted = right_results["extracted"]
+
+        st.markdown("### Comparison Summary")
+        summary_lines = []
+
+        left_deadlines = len(left_extracted.get("deadlines", []))
+        right_deadlines = len(right_extracted.get("deadlines", []))
+        left_docs = len(left_extracted.get("requested_documents", []))
+        right_docs = len(right_extracted.get("requested_documents", []))
+        left_tasks = len(left_plan.tasks)
+        right_tasks = len(right_plan.tasks)
+
+        def compare_line(label, left_val, right_val):
+            if left_val > right_val:
+                return f"- Left input has more {label}: {left_val} vs {right_val}"
+            if right_val > left_val:
+                return f"- Right input has more {label}: {right_val} vs {left_val}"
+            return f"- Both inputs have the same number of {label}: {left_val}"
+
+        summary_lines.append(compare_line("deadlines", left_deadlines, right_deadlines))
+        summary_lines.append(compare_line("documents", left_docs, right_docs))
+        summary_lines.append(compare_line("tasks", left_tasks, right_tasks))
+
+        st.markdown("\n".join(summary_lines))
+
+        col1, col2 = st.columns(2)
+        with col1:
+            render_case_results(left_results, "Left Results")
+        with col2:
+            render_case_results(right_results, "Right Results")
