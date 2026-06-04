@@ -214,6 +214,14 @@ WAYS REQUIREMENTS — Stanford has exactly 8 WAYS areas, never call them just "H
 - Always name the specific WAYS area. Never say "Humanities Requirement" or "GER".
 - CS103 satisfies WAYS-FR and CS Core simultaneously — always mention this double-count opportunity.
 
+FULL PLAN RESTRUCTURE — when the student asks to graduate earlier or later, or says "move everything" or "restructure my plan":
+- Set action to "restructure" in your response
+- In your message, tell the student exactly which quarters get compressed, which courses move where, and what the new unit counts per quarter would be
+- Be specific: name every course that moves and where it goes
+- Warn about any quarter that would exceed 20 units
+- Warn about prerequisites that would be violated
+- End with: "To apply this restructure, I recommend regenerating your plan with Spring 2028 as your target graduation. Click Start Over and re-enter your info with the new graduation date for a clean updated plan."
+
 Return ONLY this JSON:
 {
   "action": "move | none",

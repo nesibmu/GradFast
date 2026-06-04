@@ -67,16 +67,21 @@ export function Planner() {
         terms
       );
 
-      // Try to apply the move in the frontend
-      if (
-        response.planAction.action === "move" &&
+      // Apply move or restructure
+      if (response.planAction.action === "move" &&
         response.planAction.courseCode &&
         response.planAction.toTerm
       ) {
         const updated = applyMove(terms, response.planAction.courseCode, response.planAction.toTerm);
-        if (updated) {
-          setTerms(updated);
-        }
+        if (updated) setTerms(updated);
+      }
+      if (response.planAction.action === "restructure") {
+        setMessages([...newMsgs, {
+          role: "assistant",
+          content: response.message + "\n\nTo apply this as a clean updated plan, click Start Over below and enter your new target graduation date."
+        }]);
+        setThinking(false);
+        return;
       }
 
       setMessages([...newMsgs, { role: "assistant", content: response.message }]);
