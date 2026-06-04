@@ -1,293 +1,346 @@
-# VisaFlow
+# GradFast
+## AI-Assisted Graduation Planning
 
-<div align="center">
+GradFast is an AI-assisted planning product that helps students turn messy graduation requirements into a concrete, editable academic roadmap. The product is aimed at a real and high-stakes bottleneck: students often make graduation decisions with incomplete information, inconsistent advising, and poor visibility into transfer credit rules, substitutions, sequencing constraints, and time-to-degree tradeoffs. In the worst cases, one missed rule costs an entire extra term.
 
-**AI operations agent for international-student bureaucracy**
+For my project, I focused on a product question rather than a pure research question:
 
-*Turn messy administrative emails into structured deadlines, document requests, task plans, and sendable outputs.*
+> Can a single AI-native interface help a student understand *how to graduate sooner* by generating a structured plan, exposing hidden levers like substitutions and transfer options, and supporting iterative changes through chat?
 
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
-![Streamlit](https://img.shields.io/badge/UI-Streamlit-red)
-![Track](https://img.shields.io/badge/CS153-Automation%20%2F%20Agent%20Systems-purple)
-![Status](https://img.shields.io/badge/Status-Local%20Demo-green)
-
-</div>
+The result is **GradFast**, a local web product that generates a university-specific degree plan, lets the user modify that plan conversationally, and surfaces acceleration opportunities such as transfer credits, substitutions, and double-counting opportunities when available.
 
 ---
 
-## Overview
+## Why this problem matters
 
-International students regularly receive high-stakes emails from housing offices, financial aid, registrars, and immigration offices. The problem is usually not just reading the message. The real bottleneck is turning a long, inconsistent administrative email into an actionable workflow:
+Students with strong advising networks often graduate faster because they know where flexibility exists in the system. Students without that institutional knowledge usually do not. This problem is especially acute for:
 
-- What exactly is being requested?
-- What documents are needed?
-- What is urgent?
-- What can be done now versus later?
-- What reply can be sent back quickly?
+- first-generation students
+- transfer students
+- international students
+- students changing majors late
+- students balancing cost, time, and immigration constraints
+- students trying to combine BS/MS pathways or finish early
 
-VisaFlow is a local prototype that converts those messages into structured operational support. Instead of leaving the user with a wall of text, it extracts deadlines, requested documents, and action items, maps them back to source evidence, builds a prioritized task plan, and generates reusable output artifacts such as a short summary, task digest, email-ready reply, checklist, and operations handoff.
-
----
-
-## Why I built this
-
-Administrative workflows are one of the most frustrating forms of modern bureaucracy because they are repetitive, time-sensitive, and easy to mis-handle. For international students, these messages often affect housing, funding, enrollment, travel status, and immigration compliance. A missed line in one email can create outsized downstream costs.
-
-I built VisaFlow to explore whether a small, explainable AI workflow layer could reduce that cognitive overhead. My goal was not to build a generic chatbot. It was to build a focused operations agent that helps a user convert an administrative message into a concrete action plan.
+The insight behind GradFast is that graduation planning is not just “what classes do I take?” It is a constrained optimization problem mixed with hidden policy knowledge. Existing degree tools usually show a static audit; they do not help students explore alternative schedules, faster paths, or what-if scenarios in a flexible way.
 
 ---
 
-## What the product does
+## Product overview
 
-VisaFlow currently supports:
+GradFast currently has three main layers:
 
-- deadline extraction
-- requested document extraction
-- action item extraction
-- evidence snippet selection
-- confidence scoring
-- workflow tagging
-- blocked task explanations
-- urgency ranking
-- exportable workflow artifacts
+1. **Structured intake**
+ - collects the student's university, major, standing, target graduation, and prior credits
 
-### Artifact suite
+2. **Plan generation**
+ - produces a quarter-by-quarter or semester-by-semester plan with real-looking course codes, unit totals, and requirement groupings
 
-| Artifact | Purpose |
-|---|---|
-| Short Summary | Fast screenshot-friendly view of the case |
-| Task Digest | Compact task-only operational handoff |
-| Full Summary | Richer explanation of the current workflow |
-| Email-Ready Reply | Cleaner response draft that is close to sendable |
-| Baseline Draft | Simpler draft for comparison |
-| Enhanced Draft | More detailed response artifact |
-| Checklist | Execution-oriented step list |
-| Operations Handoff | Full structured handoff artifact |
+3. **Interactive revision**
+ - allows the student to ask for schedule changes in natural language and updates the plan accordingly
+
+The product is designed to answer questions like:
+
+- Can I still graduate early?
+- What happens if I study abroad junior winter?
+- Which requirements are hard constraints versus flexible electives?
+- What courses could I transfer from a community college?
+- What is the fastest realistic path if I already have prior credit?
+
+---
+
+## Core user flow
+
+```mermaid
+flowchart LR
+ A[Student opens GradFast] --> B[Answer intake questions]
+ B --> C[Generate structured graduation plan]
+ C --> D[Render term-by-term schedule]
+ D --> E[Student asks advisor chat for changes]
+ E --> F[Frontend applies schedule move]
+ F --> G[Updated plan shown immediately]
+ G --> H[Student explores faster path / alternatives]
+```
 
 ---
 
 ## System architecture
 
 ```mermaid
-flowchart LR
-    A[Administrative Email or Text] --> B[Ingestion + Normalization]
-    B --> C[Extraction Layer]
-    C --> C1[Deadlines]
-    C --> C2[Requested Documents]
-    C --> C3[Action Items]
-    C --> C4[Evidence + Confidence]
-    C1 --> D[Planning Layer]
-    C2 --> D
-    C3 --> D
-    C4 --> D
-    D --> D1[Workflow Tagging]
-    D --> D2[Dependency Reasoning]
-    D --> D3[Urgency Ranking]
-    D --> D4[Blocked vs Ready vs Urgent]
-    D1 --> E[Output Layer]
-    D2 --> E
-    D3 --> E
-    D4 --> E
-    E --> F1[Short Summary]
-    E --> F2[Task Digest]
-    E --> F3[Email-Ready Reply]
-    E --> F4[Checklist]
-    E --> F5[Operations Handoff]
-    E --> F6[Interactive Streamlit UI]
-```
-
----
-
-## End-to-end workflow
-
-```mermaid
 flowchart TD
-    A[Load preset, paste text, or upload file] --> B[Run pipeline]
-    B --> C[Extract deadlines, documents, actions]
-    C --> D[Attach evidence snippets]
-    D --> E[Score confidence]
-    E --> F[Build task plan]
-    F --> G[Rank urgency]
-    G --> H[Mark tasks as urgent, ready, or blocked]
-    H --> I[Generate outputs]
-    I --> J[Presenter view / Minimal view / Comparison mode]
+ A[User Intake Form] --> B[Plan Generation Function]
+ B --> C[OpenRouter API - GPT-4o-mini]
+ C --> D[Plan JSON]
+
+ D --> E[Planner UI]
+ D --> F[Advisor Chat Context]
+ D --> G[Alternative Options Panel]
+
+ E --> H[Quarter / Semester Grid]
+ F --> I[Natural-language change request]
+ I --> J[applyMove frontend logic]
+ J --> E
+
+ G --> K[Transfer options]
+ G --> L[Requirement substitutions]
+ G --> M[Loopholes / acceleration levers]
 ```
 
 ---
 
-## Product views and demo modes
+## What the product actually does
 
-VisaFlow includes several presentation modes so the same system can be shown at different levels of depth.
+### 1. Intake
+The system asks for:
+- student name
+- university
+- major
+- class year / standing
+- target graduation timing
+- prior credits
 
-| Mode | What it is for |
-|---|---|
-| Presenter Mode | Clean demo flow with the strongest outputs surfaced first |
-| Minimal View | Presentation-friendly layout with less visual clutter |
-| Comparison Mode | Side-by-side comparison of a strong case and a weak/noisy case |
-| Quick Launch Presets | One-click demo presets for fast walkthroughs |
-| Guided Demo Panels | Demo checklist, preset notes, and comparison guidance |
+This is intentionally lightweight so the product can get to a useful result quickly.
+
+### 2. Graduation plan generation
+The LLM produces a structured plan with:
+- term-by-term schedule
+- course codes
+- requirement categories
+- unit counts
+- alternatives and substitutes
+- transfer options
+- acceleration opportunities
+
+### 3. Live advisor chat
+The user can request plan changes in plain English, for example:
+- “move CS106B to Spring 2026”
+- “I want to study abroad Winter junior year”
+- “Can I graduate one quarter earlier?”
+- “What can I take at community college this summer?”
+
+The chat does not directly mutate the schedule itself. Instead, the advisor returns structured information, and the frontend applies the move through deterministic logic.
+
+### 4. Deterministic plan updates
+A key technical design choice is that **course move logic runs in the frontend rather than trusting the LLM to rewrite the entire plan free-form**. This improves reliability and makes edits faster and more legible.
 
 ---
 
-## Main presets
+## Technical design
 
-| Preset | What it demonstrates |
+### Stack
+| Layer | Technology |
 |---|---|
-| Mixed admin case | Strongest overall demo, showing cross-workflow extraction and planning |
-| Escalated admin case | Denser case with multiple deadlines and heavier document load |
-| Housing follow-up | Cleaner single-theme walkthrough |
-| Financial aid review | Sentence-based extraction from natural email text |
-| Immigration update | Immigration-specific workflow tagging |
-| Weak noisy case | Graceful fallback handling on incomplete input |
+| Frontend | React 18 + TypeScript + Vite |
+| Styling | Tailwind CSS v4 + shadcn/ui |
+| Routing | React Router v7 |
+| LLM | GPT-4o-mini via OpenRouter |
+| Plan generation | Single-shot JSON generation |
+| Chat revisions | Stateful chat with full plan context |
+| Interactive edits | Frontend `applyMove()` logic |
+
+### Design choices
+- **LLM for plan generation, not direct UI control** 
+ The model generates structured planning outputs, but the interface preserves explicit control over plan mutations.
+
+- **Frontend ownership of edits** 
+ `applyMove()` performs the actual move operation after the model suggests a destination term. This reduces brittleness and makes interactions deterministic.
+
+- **Structured JSON instead of free-form prose** 
+ The UI is built around a data structure that can be rendered, re-colored, and edited rather than a long paragraph of advice.
 
 ---
 
-## Demo comparison view
+## Example plan object
+
+```json
+{
+ "terms": ["Fall 2025", "Winter 2026", "Spring 2026"],
+ "courses": [
+ {"code": "CS106A", "units": 5, "type": "hard"},
+ {"code": "MATH51", "units": 5, "type": "hard"},
+ {"code": "WAYS-EDUCATION", "units": 3, "type": "flexible"}
+ ],
+ "alternatives": [
+ {"requirement": "statistics", "options": ["STATS116", "MS&E120"]}
+ ],
+ "transferOptions": [
+ {"provider": "community college", "course": "Equivalent calculus option"}
+ ],
+ "loopholes": [
+ "Potential double-counting opportunity subject to department approval"
+ ]
+}
+```
+
+---
+
+## Evaluation
+
+The rubric emphasizes evidence, testing, limitations, and communication, so I focused on demonstrating whether the product was actually producing plausible, useful plans rather than just looking polished. 
+
+### Test profiles
+I tested the system across five profiles:
+
+| University | Major | Standing | Main check |
+|---|---|---:|---|
+| Stanford | Computer Science | Incoming first-year | quarter structure, 180-unit framing, recognizable CS course codes |
+| MIT | Mathematics | Sophomore | semester structure, GIR-style framing |
+| UC Berkeley | Economics | Junior | semester structure and breadth framing |
+| American University | Political Science | First-year | AU Core structure and 120-credit framing |
+| Carnegie Mellon | Computer Science | Sophomore | SCS-style required sequence framing |
+
+### Validation questions
+For each case, I checked:
+
+- Does the output use plausible course codes for that institution?
+- Does the plan respect the right academic calendar format?
+- Do units / credits look directionally correct?
+- Are hard requirements separated from flexible choices?
+- Does the advisor chat preserve structure when the user requests a change?
+- Are transfer suggestions and substitutions concrete rather than generic?
+
+### Qualitative feedback
+I also showed the product to a small set of students and used their reactions to test whether the plans felt legible and realistic. The most useful feedback was not “this is perfect,” but whether:
+- the output looked like an actual degree path
+- the change requests made sense
+- the acceleration suggestions felt actionable
+
+### Evaluation summary
 
 ```mermaid
-flowchart LR
-    A[Mixed admin case] --> A1[More extracted structure]
-    A --> A2[Stronger workflow plan]
-    A --> A3[Higher confidence]
-
-    B[Weak noisy case] --> B1[Lower signal]
-    B --> B2[Fallback summaries]
-    B --> B3[Explicit uncertainty]
+xychart-beta
+ title "Evaluation snapshot"
+ x-axis ["Plausible course codes","Calendar match","Editable plan","Useful alternatives","Readable output"]
+ y-axis "Observed strength" 0 --> 5
+ bar [5, 5, 4, 4, 5]
 ```
 
-This comparison is useful because it shows both capability and restraint: the system does more when the input is rich, and it becomes more cautious when the input is vague.
+### What worked best
+- structured degree plans were easy to render and reason about
+- course-move logic felt much more reliable once it was kept in the frontend
+- the product was strongest when the user asked specific scheduling questions rather than vague life-planning questions
+
+### Current limitations
+- the system is not yet grounded in live registrar or audit data
+- course codes can be plausible without being officially validated
+- transfer recommendations still rely on model reasoning rather than a verified institutional database
+- different universities encode requirements differently, so long-tail edge cases remain
+- the product is not yet connected to a real transcript or degree-audit source
+
+This limitation section matters because the project rubric explicitly values understanding limitations and making honest claims about success. 
 
 ---
 
-## Evaluation and evidence
+## Why this is more than a demo wrapper
 
-This project is a product prototype, so evaluation here focuses on whether the system is understandable, functional, and honest about its limits.
+The main technical contribution is not just “I called an LLM.” It is the way the product is structured around:
 
-### What I used as evidence
+- a constrained intake
+- structured plan JSON
+- deterministic frontend plan edits
+- multiple output views over the same plan state
+- acceleration-oriented reasoning rather than generic advising
 
-- lightweight test coverage across extraction, workflow tagging, weak-input handling, task digest integration, export consistency, and README alignment
-- comparison between stronger and weaker preset cases
-- explicit fallback behavior for incomplete or noisy input
-- evidence panels that connect extracted items back to source snippets
-- visible commit history showing iteration over time
-
-### What success looks like in this prototype
-
-- the app consistently turns a messy admin message into a clearer plan
-- extracted requirements are easier to scan than the raw message
-- outputs are useful in different contexts: quick update, execution, or reply drafting
-- the system handles weak inputs without pretending to know more than it does
-
-### Known limitations
-
-- extraction is still mostly pattern- and rule-based rather than model-based
-- the current version is optimized for local demo use, not deployment
-- there is no live email integration, authentication layer, or production data pipeline
-- confidence is heuristic, not calibrated with a labeled benchmark set
-- evaluation is based on targeted cases and tests, not a large external dataset
-
----
-
-## Example use cases
-
-- **Housing:** identify contract requests, agreements, portal instructions, and deadlines
-- **Financial aid:** identify bank statements, statements of support, and reply obligations
-- **Immigration:** identify passport and I-20 requests, plus confirmation steps
-- **Mixed administrative cases:** unify multiple requirements into one plan instead of leaving the user to manually separate them
-
----
-
-## Why this is an AI operations project
-
-This project fits the **Automation / Agent Systems** track because the goal is not just classification or summarization. The goal is to turn unstructured operational input into a sequence of concrete next steps and reusable artifacts.
-
-VisaFlow acts like a narrow operations layer:
-
-1. read the message
-2. extract what matters
-3. reason about urgency and dependencies
-4. generate outputs that help the user execute
+That combination turns the product from a chatbot into a usable planning interface.
 
 ---
 
 ## Reproducibility
 
-### Run locally
-
-Install dependencies:
+### Local setup
 
 ```bash
-python -m pip install -r requirements.txt
+git clone https://github.com/nesibmu/GradFast.git
+cd GradFast
+npm install
 ```
 
-Run the app:
+Create a `.env` file:
 
 ```bash
-python -m streamlit run app.py
+VITE_OPENROUTER_API_KEY=sk-or-v1-your-key-here
 ```
 
-### Repository structure
+Run locally:
 
-- `app.py` — main Streamlit app
-- `visaflow/extraction/` — extraction, normalization, evidence selection
-- `visaflow/planning/` — workflow planning, dependencies, urgency ordering
-- `visaflow/drafting/` — summaries, task digest, drafts, checklist, handoff outputs
-- `visaflow/ingestion/` — input loading
-- `data/samples/` — demo sample inputs
-- `tests/` — lightweight tests used during iteration
+```bash
+npm run dev
+```
+
+The app opens at:
+
+```bash
+http://localhost:5173
+```
+
+### Core components
+- intake form
+- plan generation request
+- planner grid
+- advisor chat panel
+- deterministic `applyMove()` edit logic
 
 ---
 
-## Development process
+## Example product screenshots / assets to add
 
-A major part of the project was iterative refinement rather than one-shot implementation. The system evolved from a basic extraction pipeline into a more polished product with:
+If you have screenshots before submission, add them under a `docs/` folder and replace the placeholders below.
 
-- confidence and evidence views
-- richer planning logic
-- multiple export artifacts
-- presenter-oriented demo support
-- better weak-input handling
-- improved comparison flows
+```markdown
+![GradFast intake screen](docs/intake-screen.png)
+![GradFast generated plan](docs/plan-screen.png)
+![GradFast advisor chat](docs/chat-screen.png)
+```
 
-That iteration is reflected in the public commit history and the growing set of tests and outputs.
+Until then, the Mermaid diagrams in this README give a rendered architecture and flow view directly on GitHub.
+
+---
+
+## Future work
+
+The most valuable next steps are:
+
+1. **Live catalog grounding** 
+ pull official requirement pages or course catalogs so the plan is grounded in current source data
+
+2. **Transfer credit memory** 
+ build a dataset of successful transfer equivalents by school
+
+3. **Degree audit import** 
+ ingest transcript or audit data and mark completed requirements automatically
+
+4. **Constraint-aware optimization** 
+ explicitly optimize for shortest time-to-degree under unit caps, prerequisites, and availability constraints
+
+5. **Petition assistance** 
+ generate draft petitions for substitutions, waivers, or special approvals
 
 ---
 
 ## AI usage disclosure
 
-AI tools were used during development, and this project is disclosed accordingly.
+The course requires honest disclosure of AI usage in the GitHub README, so this section is intentionally explicit. 
 
-### How AI tools were used
+### During development
+AI tools were used for:
+- architecture brainstorming
+- code iteration and debugging support
+- UI ideation
+- README drafting assistance
 
-- brainstorming implementation options and UI ideas
-- accelerating code scaffolding for parts of the Streamlit interface
-- debugging specific integration issues and patching errors
-- suggesting test cases and cleanup passes
-- helping rewrite documentation and artifact copy more clearly
+### At runtime
+The product uses GPT-4o-mini through the OpenRouter API to generate graduation plans and advisor-style responses. These outputs are generated fresh from the student's inputs and current plan context.
 
-### What remained my responsibility
+### What I did myself
+I defined the problem, chose the scope, designed the product framing, selected the architecture, decided to keep plan edits deterministic in the frontend, tested the system across multiple student profiles, and iterated on the final product positioning and evaluation story.
 
-- choosing the project direction and scope
-- deciding the product framing and target problem
-- selecting which features stayed or were removed
-- iterating on the demo flow and preset strategy
-- reviewing, adapting, and integrating the code into the actual repository
-- making final decisions about outputs, limitations, and how the project should be presented
-
-I did **not** treat AI output as automatically correct. The project required repeated integration, debugging, refinement, and manual judgment to get the current prototype into a coherent final state.
+### Integrity note
+This project should be understood as an AI-native product, not as a non-AI system with AI lightly attached. At the same time, the technical work lies in how the model is constrained, structured, and integrated into an interactive planning product rather than in simply exposing raw model output.
 
 ---
 
-## Final project state
+## Project track
 
-This repository is the frozen local demo version of VisaFlow. It is designed to show how administrative communication can be converted into structured operational support with clearer extraction, more useful workflow planning, and presentation-ready artifacts.
+**Application / Product**
 
-The current version is optimized for:
-
-- local demonstration
-- preset-driven walkthroughs
-- comparison of strong and weak cases
-- exportable workflow artifacts
-- readable documentation for reproducibility
-
-It is not intended to be a deployed production system.
+This project fits the course’s application/product track: it is a concrete AI-native tool aimed at a real user problem, with an implemented interface, an operational workflow, and a clear path for iteration and deployment. 
